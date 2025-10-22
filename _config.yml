@@ -122,10 +122,12 @@ comments:
     repo: LoliLin/lolilin.github.io # <gh-username>/<repo>
     repo_id: R_kgDOO7fWXg
     category: General
-    category_id: DIC_kwDONaGoLc4ClB3a
+    category_id: DIC_kwDOO7fWXs4CrfPn
     mapping: pathname # optional, default to 'pathname'
-    strict: 1 # optional, default to '0'
-    input_position: # optional, default to 'bottom'
+    strict: 0 # optional, default to '0'
+    reactions-enabled= 1
+    input_position: bottom # optional, default to 'bottom'
+    theme = preferred_color_scheme
     lang: zh-CN # optional, default to the value of `site.lang`
     reactions_enabled: anonymous # optional, default to the value of `1`
 
