@@ -74,16 +74,16 @@ refactor: true
           {% assign card_body_col = '7' %}
         {% endif %}
 
-        <div class="col-md-{{ card_body_col }}">
-          <div class="card-body d-flex flex-column">
+        <div class="col-md-{{ card_body_col }}" style="text-autospace: ideograph-alpha ideograph-numeric ideograph-parenthesis;">
+          <div class="card-body d-flex flex-column" style="text-autospace: ideograph-alpha ideograph-numeric ideograph-parenthesis;">
             <h1 class="card-title my-2 mt-md-0">{{ post.title }}</h1>
 
-            <div class="card-text content mt-0 mb-3">
+            <div class="card-text content mt-0 mb-3" style="text-autospace: ideograph-alpha ideograph-numeric ideograph-parenthesis;">
               <p>{% include post-description.html %}</p>
             </div>
 
-            <div class="post-meta flex-grow-1 d-flex align-items-end">
-              <div class="me-auto">
+            <div class="post-meta flex-grow-1 d-flex align-items-end" style="text-autospace: ideograph-alpha ideograph-numeric ideograph-parenthesis;">
+              <div class="me-auto" style="text-autospace: ideograph-alpha ideograph-numeric ideograph-parenthesis;">
                 <!-- posted date -->
                 <i class="far fa-calendar fa-fw me-1"></i>
                 {% include datetime.html date=post.date lang=lang %}
@@ -101,7 +101,7 @@ refactor: true
               </div>
 
               {% if post.pin %}
-                <div class="pin ms-1">
+                <div class="pin ms-1" style="text-autospace: ideograph-alpha ideograph-numeric ideograph-parenthesis;">
                   <i class="fas fa-thumbtack fa-fw"></i>
                   <span>{{ site.data.locales[lang].post.pin_prompt }}</span>
                 </div>

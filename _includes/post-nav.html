@@ -13,7 +13,7 @@
       <p>{{ page.previous.title }}</p>
     </a>
   {% else %}
-    <div class="btn btn-outline-primary disabled" aria-label="{{ previous }}">
+    <div class="btn btn-outline-primary disabled" aria-label="{{ previous }}" style="text-autospace: ideograph-alpha ideograph-numeric ideograph-parenthesis;">
       <p>-</p>
     </div>
   {% endif %}
@@ -27,7 +27,7 @@
       <p>{{ page.next.title }}</p>
     </a>
   {% else %}
-    <div class="btn btn-outline-primary disabled" aria-label="{{ next }}">
+    <div class="btn btn-outline-primary disabled" aria-label="{{ next }}" style="text-autospace: ideograph-alpha ideograph-numeric ideograph-parenthesis;">
       <p>-</p>
     </div>
   {% endif %}
