@@ -26,20 +26,20 @@ description: >- # used by seo meta and the atom feed
 url: ""
 
 github:
-  username: loliling # change to your GitHub username
+  username: lolilin # change to your GitHub username
 
 twitter:
-  username: lolin_verse # change to your Twitter username
+  username: LolingVerse # change to your Twitter username
 
 social:
   # Change to your full name.
   # It will be displayed as the default author of the posts and the copyright owner in the Footer
   name: 洛铃
-  #email: lanhuamsy@sina.com # change to your email address
+  email: lolinverse@outlook.com # change to your email address
   links:
     # The first element serves as the copyright owner's link
-    # - https://twitter.com/username # change to your Twitter homepage
-    - https://github.com/loliling # change to your GitHub homepage
+    - https://twitter.com/LolingVerse # change to your Twitter homepage
+    - https://github.com/lolilin # change to your GitHub homepage
     # Uncomment below to add more social links
     # - https://www.facebook.com/username
     # - https://www.linkedin.com/in/username
