@@ -1,0 +1,486 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>文本行前缀添加工具 - 包含空行</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', 'Microsoft YaHei', sans-serif;
+        }
+        
+        body {
+            background-color: #f5f7fa;
+            color: #333;
+            line-height: 1.6;
+            padding: 20px;
+            min-height: 100vh;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background-color: white;
+            border-radius: 12px;
+            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.08);
+            overflow: hidden;
+        }
+        
+        header {
+            background: linear-gradient(135deg, #6a11cb 0%, #2575fc 100%);
+            color: white;
+            padding: 25px 30px;
+        }
+        
+        h1 {
+            font-size: 2.2rem;
+            margin-bottom: 8px;
+        }
+        
+        .subtitle {
+            font-size: 1.1rem;
+            opacity: 0.9;
+            font-weight: 300;
+        }
+        
+        .content {
+            padding: 30px;
+        }
+        
+        .input-section {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 25px;
+            margin-bottom: 30px;
+        }
+        
+        .input-container, .output-container {
+            flex: 1;
+            min-width: 300px;
+        }
+        
+        .section-title {
+            font-size: 1.3rem;
+            margin-bottom: 12px;
+            color: #2c3e50;
+            display: flex;
+            align-items: center;
+        }
+        
+        .section-title i {
+            margin-right: 8px;
+            color: #6a11cb;
+        }
+        
+        textarea {
+            width: 100%;
+            height: 280px;
+            padding: 18px;
+            border: 2px solid #e1e5eb;
+            border-radius: 8px;
+            font-size: 15px;
+            line-height: 1.5;
+            resize: vertical;
+            transition: border-color 0.3s;
+        }
+        
+        textarea:focus {
+            outline: none;
+            border-color: #6a11cb;
+            box-shadow: 0 0 0 3px rgba(106, 17, 203, 0.1);
+        }
+        
+        .input-textarea {
+            background-color: #f9fafc;
+        }
+        
+        .output-textarea {
+            background-color: #f0f4ff;
+            border-color: #d0d9ff;
+        }
+        
+        .controls {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+            margin-bottom: 30px;
+            padding: 20px;
+            background-color: #f8f9ff;
+            border-radius: 10px;
+            align-items: center;
+        }
+        
+        .control-group {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .prefix-input {
+            width: 60px;
+            padding: 10px;
+            border: 2px solid #e1e5eb;
+            border-radius: 6px;
+            font-size: 16px;
+            text-align: center;
+            font-weight: bold;
+        }
+        
+        button {
+            padding: 14px 28px;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+        
+        .process-btn {
+            background: linear-gradient(to right, #6a11cb, #2575fc);
+            color: white;
+        }
+        
+        .process-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 15px rgba(106, 17, 203, 0.3);
+        }
+        
+        .copy-btn {
+            background-color: #10b981;
+            color: white;
+        }
+        
+        .copy-btn:hover {
+            background-color: #0da271;
+            transform: translateY(-2px);
+            box-shadow: 0 6px 15px rgba(16, 185, 129, 0.3);
+        }
+        
+        .reset-btn {
+            background-color: #f3f4f6;
+            color: #4b5563;
+        }
+        
+        .reset-btn:hover {
+            background-color: #e5e7eb;
+        }
+        
+        .info-box {
+            background-color: #f0f7ff;
+            border-left: 4px solid #3b82f6;
+            padding: 16px;
+            border-radius: 0 6px 6px 0;
+            margin-bottom: 25px;
+        }
+        
+        .info-box h3 {
+            color: #1e40af;
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .info-box ul {
+            padding-left: 20px;
+        }
+        
+        .info-box li {
+            margin-bottom: 6px;
+        }
+        
+        .example {
+            background-color: #f9fafc;
+            border-radius: 8px;
+            padding: 18px;
+            margin-top: 20px;
+            border: 1px dashed #d1d5db;
+        }
+        
+        .example h4 {
+            margin-bottom: 10px;
+            color: #4b5563;
+        }
+        
+        .example-text {
+            font-family: monospace;
+            background-color: #f3f4f6;
+            padding: 10px;
+            border-radius: 6px;
+            font-size: 14px;
+            white-space: pre-line;
+        }
+        
+        .status {
+            padding: 12px 18px;
+            border-radius: 8px;
+            margin-top: 20px;
+            display: none;
+            align-items: center;
+            gap: 12px;
+            font-weight: 500;
+        }
+        
+        .status.success {
+            background-color: #d1fae5;
+            color: #065f46;
+            border-left: 4px solid #10b981;
+            display: flex;
+        }
+        
+        .status.error {
+            background-color: #fee2e2;
+            color: #991b1b;
+            border-left: 4px solid #ef4444;
+            display: flex;
+        }
+        
+        .stats {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 15px;
+            font-size: 14px;
+            color: #6b7280;
+        }
+        
+        footer {
+            text-align: center;
+            padding: 25px;
+            color: #6b7280;
+            border-top: 1px solid #e5e7eb;
+            margin-top: 20px;
+        }
+        
+        @media (max-width: 768px) {
+            .input-section {
+                flex-direction: column;
+            }
+            
+            .controls {
+                flex-direction: column;
+                align-items: stretch;
+            }
+            
+            button {
+                width: 100%;
+            }
+            
+            .control-group {
+                width: 100%;
+                justify-content: center;
+            }
+        }
+    </style>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1><i class="fas fa-code"></i> 文本行前缀添加工具</h1>
+            <p class="subtitle">为文本的每一行（包括空行）添加自定义前缀字符</p>
+        </header>
+        
+        <div class="content">
+            <div class="info-box">
+                <h3><i class="fas fa-info-circle"></i> 使用说明</h3>
+                <ul>
+                    <li>在左侧输入框中输入或粘贴您的文本</li>
+                    <li>点击"添加前缀"按钮为每一行（包括空行）添加前缀字符</li>
+                    <li>您可以使用默认的前缀字符">"或自定义其他字符</li>
+                    <li>处理完成后，点击"复制结果"按钮将结果复制到剪贴板</li>
+                </ul>
+            </div>
+            
+            <div class="controls">
+                <div class="control-group">
+                    <label for="prefix">前缀字符:</label>
+                    <input type="text" id="prefix" class="prefix-input" value=">" maxlength="3">
+                </div>
+                
+                <button id="processBtn" class="process-btn">
+                    <i class="fas fa-magic"></i> 添加前缀
+                </button>
+                
+                <button id="copyBtn" class="copy-btn" disabled>
+                    <i class="far fa-copy"></i> 复制结果
+                </button>
+                
+                <button id="resetBtn" class="reset-btn">
+                    <i class="fas fa-redo"></i> 重置
+                </button>
+            </div>
+            
+            <div class="input-section">
+                <div class="input-container">
+                    <h3 class="section-title"><i class="fas fa-keyboard"></i> 输入文本</h3>
+                    <textarea id="inputText" class="input-textarea" placeholder="请输入文本，每行将添加前缀字符（包括空行）...">
+第一行文本
+
+第二行文本
+第三行文本
+
+
+最后一行文本</textarea>
+                    <div class="stats">
+                        <span id="inputLineCount">行数: 0</span>
+                        <span id="inputCharCount">字符数: 0</span>
+                    </div>
+                </div>
+                
+                <div class="output-container">
+                    <h3 class="section-title"><i class="fas fa-file-code"></i> 输出结果</h3>
+                    <textarea id="outputText" class="output-textarea" readonly placeholder="处理后的结果将显示在这里..."></textarea>
+                    <div class="stats">
+                        <span id="outputLineCount">行数: 0</span>
+                        <span id="outputCharCount">字符数: 0</span>
+                    </div>
+                </div>
+            </div>
+            
+            <div id="status" class="status"></div>
+            
+            <div class="example">
+                <h4><i class="fas fa-lightbulb"></i> 示例</h4>
+                <p>输入文本:</p>
+                <div class="example-text">第一行
+
+第二行
+
+第三行</div>
+                <p>添加前缀">"后:</p>
+                <div class="example-text">>第一行
+>
+>第二行
+>
+>第三行</div>
+            </div>
+        </div>
+        
+        <footer>
+            <p>文本行前缀添加工具 &copy; 2023 | 处理每一行（包括空行）</p>
+        </footer>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // 获取DOM元素
+            const inputText = document.getElementById('inputText');
+            const outputText = document.getElementById('outputText');
+            const processBtn = document.getElementById('processBtn');
+            const copyBtn = document.getElementById('copyBtn');
+            const resetBtn = document.getElementById('resetBtn');
+            const prefixInput = document.getElementById('prefix');
+            const statusDiv = document.getElementById('status');
+            const inputLineCount = document.getElementById('inputLineCount');
+            const inputCharCount = document.getElementById('inputCharCount');
+            const outputLineCount = document.getElementById('outputLineCount');
+            const outputCharCount = document.getElementById('outputCharCount');
+            
+            // 更新输入文本统计信息
+            function updateInputStats() {
+                const text = inputText.value;
+                const lines = text.split('\n').length;
+                inputLineCount.textContent = `行数: ${lines}`;
+                inputCharCount.textContent = `字符数: ${text.length}`;
+            }
+            
+            // 更新输出文本统计信息
+            function updateOutputStats() {
+                const text = outputText.value;
+                const lines = text.split('\n').length;
+                outputLineCount.textContent = `行数: ${lines}`;
+                outputCharCount.textContent = `字符数: ${text.length}`;
+            }
+            
+            // 页面加载时初始化统计
+            updateInputStats();
+            
+            // 输入文本变化时更新统计
+            inputText.addEventListener('input', updateInputStats);
+            
+            // 处理按钮点击事件
+            processBtn.addEventListener('click', function() {
+                const prefix = prefixInput.value || '>';
+                const inputLines = inputText.value.split('\n');
+                const outputLines = inputLines.map(line => prefix + line);
+                const output = outputLines.join('\n');
+                
+                outputText.value = output;
+                updateOutputStats();
+                
+                // 启用复制按钮
+                copyBtn.disabled = false;
+                
+                // 显示成功状态
+                showStatus(`成功为 ${inputLines.length} 行文本添加了前缀 "${prefix}"`, 'success');
+            });
+            
+            // 复制按钮点击事件
+            copyBtn.addEventListener('click', function() {
+                if (!outputText.value.trim()) {
+                    showStatus('输出结果为空，无法复制', 'error');
+                    return;
+                }
+                
+                outputText.select();
+                outputText.setSelectionRange(0, 99999); // 用于移动设备
+                
+                try {
+                    const successful = document.execCommand('copy');
+                    if (successful) {
+                        showStatus('结果已成功复制到剪贴板！', 'success');
+                    } else {
+                        showStatus('复制失败，请手动选择并复制', 'error');
+                    }
+                } catch (err) {
+                    // 如果execCommand失败，使用现代Clipboard API
+                    navigator.clipboard.writeText(outputText.value)
+                        .then(() => {
+                            showStatus('结果已成功复制到剪贴板！', 'success');
+                        })
+                        .catch(() => {
+                            showStatus('复制失败，请手动选择并复制', 'error');
+                        });
+                }
+            });
+            
+            // 重置按钮点击事件
+            resetBtn.addEventListener('click', function() {
+                inputText.value = '';
+                outputText.value = '';
+                prefixInput.value = '>';
+                copyBtn.disabled = true;
+                updateInputStats();
+                updateOutputStats();
+                hideStatus();
+            });
+            
+            // 显示状态信息
+            function showStatus(message, type) {
+                statusDiv.textContent = message;
+                statusDiv.className = 'status ' + type;
+                statusDiv.style.display = 'flex';
+                
+                // 3秒后自动隐藏状态信息
+                setTimeout(hideStatus, 3000);
+            }
+            
+            // 隐藏状态信息
+            function hideStatus() {
+                statusDiv.style.display = 'none';
+            }
+            
+            // 初始示例处理
+            processBtn.click();
+        });
+    </script>
+</body>
+</html>
