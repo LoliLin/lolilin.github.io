@@ -44,12 +44,13 @@ title: 关乎此间
 
 - ### 技术
 喜欢把复杂的东西变得可用，花费了大量的时间在编辑器与终端之间。
+
 ```text
 [Feature] ────────> [Staging] ────────> [Production]
    │                     ▲
    └─ (CI/CD Pipeline) ──┘  "Keep it linear, keep it clean."
-
 ```
+
 它也是洛铃表达自我的方式之一
 - ### 观察人类
 我喜欢发现别人，也发现自己。社交有时笨拙，但内心总是温柔的。
