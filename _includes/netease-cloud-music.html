@@ -1,6 +1,19 @@
-<!-- cloud music -->
-<!-- auto=1 可以控制自动播放与否，当值为 1 即打开网页就自动播放，值为 0 时需要访客手动点击播放 -->
+{% if page.netease-cloud-music %}
+  
+  {% comment %} 默认设置 auto 为 1 {% endcomment %}
+  {% assign auto_param = "1" %}
+  
+  {% comment %} 判断是否包含 '$' {% endcomment %}
+  {% if page.netease-cloud-music contains '$' %}
+    {% assign music_parts = page.netease-cloud-music | split: '$' %}
+    {% assign music_id = music_parts[0] %}
+    {% assign auto_param = music_parts[1] %}
+  {% else %}
+    {% assign music_id = page.netease-cloud-music %}
+  {% endif %}
 
-<iframe frameborder="no" border="0" marginwidth="0" marginheight="0" width=330 height=86
-        src="https://music.163.com/outchain/player?type=2&id={{ page.netease-cloud-music }}&auto=1&height=66">
-</iframe>
+  <iframe frameborder="no" border="0" marginwidth="0" marginheight="0" width="330" height="86"
+          src="https://music.163.com/outchain/player?type=2&id={{ music_id }}&auto={{ auto_param }}&height=66">
+  </iframe>
+
+{% endif %}
