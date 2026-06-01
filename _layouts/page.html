@@ -18,3 +18,11 @@ layout: default
     {{ content }}
   {% endif %}
 </article>
+
+{% if page.netease-cloud-music %}
+  <div>
+    <a class = "netease-player">
+      {% include netease-cloud-music.html %}
+    <a>
+  </div>
+{% endif %}
