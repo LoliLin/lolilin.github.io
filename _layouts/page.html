@@ -15,6 +15,12 @@ layout: default
       {{ content }}
     </div>
   {% else %}
+    {% if page.netease-cloud-music %}
+      <div id="netease-cloud-music" class="netease-player">
+        {% include netease-cloud-music.html %}
+      </div>
+      {% include netease-cloud-music.html %}
+    {% endif %}
     {{ content }}
   {% endif %}
 </article>
