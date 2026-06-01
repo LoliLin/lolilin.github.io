@@ -32,4 +32,8 @@ layout: page
 
     {% if forloop.last %}</ul>{% endif %}
   {% endfor %}
+
+  {% if page.netease-cloud-music %}
+    {% include netease-cloud-music.html %}
+  {% endif %}
 </div>
