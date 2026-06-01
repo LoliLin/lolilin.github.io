@@ -10,8 +10,12 @@
     {% assign has_flow = true %}
   {% endif %}
 
-  {% assign music_parts = page.netease-cloud-music | split: '$' %}
-  {% assign music_id = music_parts[0] %}
+  {% if page.netease-cloud-music contains '$' %}
+    {% assign music_parts = page.netease-cloud-music | split: '$' %}
+    {% assign music_id = music_parts[0] %}
+  {% else %}
+      {% assign music_id = page.netease-cloud-music %}
+  {% endif %}
 
   {% if has_auto %}
     {% assign auto_val = '1' %}
