@@ -2,7 +2,7 @@
 # the default layout is 'page'
 icon: fas fa-info-circle
 order: 4
-netease-cloud-music: 32431066
+netease-cloud-music: 32431066$auto$flow
 ---
 
 Hi, here is Lolin Verse, or, 洛铃。
