@@ -1,19 +1,127 @@
 {% if page.netease-cloud-music %}
+  {% assign has_auto = false %}
+  {% assign has_flow = false %}
   
-  {% comment %} 默认设置 auto 为 1 {% endcomment %}
-  {% assign auto_param = "1" %}
+  {% if page.netease-cloud-music contains '$auto' %}
+    {% assign has_auto = true %}
+  {% endif %}
   
-  {% comment %} 判断是否包含 '$' {% endcomment %}
-  {% if page.netease-cloud-music contains '$' %}
-    {% assign music_parts = page.netease-cloud-music | split: '$' %}
-    {% assign music_id = music_parts[0] %}
-    {% assign auto_param = music_parts[1] %}
+  {% if page.netease-cloud-music contains '$flow' %}
+    {% assign has_flow = true %}
+  {% endif %}
+
+  {% assign music_parts = page.netease-cloud-music | split: '$' %}
+  {% assign music_id = music_parts[0] %}
+
+  {% if has_auto %}
+    {% assign auto_val = '1' %}
   {% else %}
-    {% assign music_id = page.netease-cloud-music %}
+    {% assign auto_val = '0' %}
+  {% endif %}
+
+  {% if has_flow %}
+    <div id="netease-cloud-music-flow">
   {% endif %}
 
   <iframe frameborder="no" border="0" marginwidth="0" marginheight="0" width="330" height="86"
-          src="https://music.163.com/outchain/player?type=2&id={{ music_id }}&auto={{ auto_param }}&height=66", allow="autoplay">
+          src="https://music.163.com/outchain/player?type=2&id={{ music_id }}&auto={{ auto_val }}&height=66", allow="autoplay">
   </iframe>
 
+  {% if has_flow %}
+    </div>
+  {% endif %}
+{% endif %}
+
+
+{% if has_flow %}
+<style>
+#netease-cloud-music-flow {
+  /* 强制悬浮在右下角，不受页面其他元素影响 */
+  position: fixed !important;
+  bottom: 24px !important;
+  right: 24px !important;
+  z-index: 999999 !important; /* 确保图层在最顶层 */
+  
+  cursor: grab;
+  user-select: none;
+  border-radius: 12px;
+  padding: 4px;
+  background: transparent;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+#netease-cloud-music-flow:active {
+  cursor: grabbing;
+}
+
+#netease-cloud-music-flow:hover {
+  transform: scale(1.05);
+  /* 悬浮窗标配的阴影效果 */
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.25);
+}
+
+/* 解决拖拽时鼠标划入 iframe 导致卡顿的硬核方案 */
+#netease-cloud-music-flow.is-dragging iframe {
+  pointer-events: none !important;
+}
+</style>
+
+<script>
+(function() {
+  const el = document.getElementById('netease-cloud-music-flow');
+  if (!el) return;
+
+  let isDragging = false;
+  let startX, startY, origX, origY;
+
+  // 恢复之前保存的拖拽位置
+  const savedX = localStorage.getItem('netease-flow-x');
+  const savedY = localStorage.getItem('netease-flow-y');
+  if (savedX && savedY) {
+    el.style.right = 'auto';
+    el.style.bottom = 'auto';
+    el.style.left = savedX + 'px';
+    el.style.top  = savedY + 'px';
+  }
+
+  el.addEventListener('mousedown', (e) => {
+    // 排除点在播放按钮等 iframe 内部（一般点不到边缘 padding 才会触发拖拽）
+    if (e.target !== el && e.target.tagName === 'IFRAME') return; 
+    
+    isDragging = true;
+    el.classList.add('is-dragging');
+    
+    const rect = el.getBoundingClientRect();
+    startX = e.clientX;
+    startY = e.clientY;
+    origX  = rect.left;
+    origY  = rect.top;
+    
+    el.style.transition = 'none'; // 拖拽时关掉动画，防止延迟
+  });
+
+  document.addEventListener('mousemove', (e) => {
+    if (!isDragging) return;
+    const dx = e.clientX - startX;
+    const dy = e.clientY - startY;
+    
+    el.style.right = 'auto';
+    el.style.bottom = 'auto';
+    el.style.left = (origX + dx) + 'px';
+    el.style.top  = (origY + dy) + 'px';
+  });
+
+  document.addEventListener('mouseup', () => {
+    if (!isDragging) return;
+    isDragging = false;
+    el.classList.remove('is-dragging');
+    el.style.transition = 'transform 0.2s ease, box-shadow 0.2s ease';
+
+    // 记录松开鼠标时的新位置
+    const rect = el.getBoundingClientRect();
+    localStorage.setItem('netease-flow-x', rect.left);
+    localStorage.setItem('netease-flow-y', rect.top);
+  });
+})();
+</script>
 {% endif %}
