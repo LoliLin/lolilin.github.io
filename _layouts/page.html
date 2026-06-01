@@ -13,11 +13,6 @@ layout: default
     </h1>
     <div class="content" style="text-autospace: ideograph-alpha ideograph-numeric ideograph-parenthesis;">
       {{ content }}
-      {% if page.netease-cloud-music %}
-        <div id="netease-cloud-music">
-        {% include netease-cloud-music.html %}
-        </div>
-      {% endif %}
     </div>
   {% else %}
     {{ content }}
