@@ -9,6 +9,9 @@ layout: page
 {% assign df_dayjs_m = site.data.locales[lang].df.archives.dayjs | default: '/ MM' %}
 
 <div id="archives" class="pl-xl-3">
+  {% if page.netease-cloud-music %}
+    {% include netease-cloud-music.html %}
+  {% endif %}
   {% for post in site.posts %}
     {% assign cur_year = post.date | date: '%Y' %}
 
