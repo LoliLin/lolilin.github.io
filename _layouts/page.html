@@ -14,77 +14,10 @@ layout: default
     <div class="content" style="text-autospace: ideograph-alpha ideograph-numeric ideograph-parenthesis;">
       {{ content }}
       {% if page.netease-cloud-music %}
-    <div id="netease-cloud-music">
-      {% include netease-cloud-music.html %}
-      <style>
-      #netease-cloud-music {
-        position: fixed;
-        bottom: 24px;
-        right: 24px;
-        z-index: 9999;
-        cursor: grab;
-        user-select: none;
-        transition: transform 0.2s ease, box-shadow 0.2s ease;
-        border-radius: 12px;
-        /* 初始状态无阴影 */
-        box-shadow: none;
-      }
-      #netease-cloud-music:active {
-        cursor: grabbing;
-      }
-      #netease-cloud-music:hover {
-        transform: scale(1.05);
-        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
-      }
-      </style>
-      <script>
-      (function() {
-        const el = document.getElementById('netease-cloud-music');
-        if (!el) return;
-        let isDragging = false;
-        let startX, startY, origX, origY;
-        // 读取存储的位置
-        const savedX = localStorage.getItem('netease-player-x');
-        const savedY = localStorage.getItem('netease-player-y');
-        if (savedX && savedY) {
-          el.style.right = 'auto';
-          el.style.bottom = 'auto';
-          el.style.left = savedX + 'px';
-          el.style.top  = savedY + 'px';
-        }
-        el.addEventListener('mousedown', (e) => {
-          isDragging = true;
-          const rect = el.getBoundingClientRect();
-          startX = e.clientX;
-          startY = e.clientY;
-          origX  = rect.left;
-          origY  = rect.top;
-          el.style.cursor = 'grabbing';
-          el.style.transition = 'box-shadow 0.2s ease'; // 拖动时去掉 scale 过渡
-        });
-        document.addEventListener('mousemove', (e) => {
-          if (!isDragging) return;
-          const dx = e.clientX - startX;
-          const dy = e.clientY - startY;
-          el.style.left = (origX + dx) + 'px';
-          el.style.top  = (origY + dy) + 'px';
-          el.style.right = 'auto';
-          el.style.bottom = 'auto';
-        });
-        document.addEventListener('mouseup', () => {
-          if (!isDragging) return;
-          isDragging = false;
-          el.style.cursor = 'grab';
-          el.style.transition = 'transform 0.2s ease, box-shadow 0.2s ease';
-          // 保存位置
-          const rect = el.getBoundingClientRect();
-          localStorage.setItem('netease-player-x', rect.left);
-          localStorage.setItem('netease-player-y', rect.top);
-        });
-      })();
-      </script>
-    </div>
-  {% endif %}
+        <div id="netease-cloud-music">
+        {% include netease-cloud-music.html %}
+        </div>
+      {% endif %}
     </div>
   {% else %}
     {{ content }}
