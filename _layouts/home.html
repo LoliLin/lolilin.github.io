@@ -48,9 +48,6 @@ refactor: true
 {% endif %}
 
 <div id="post-list" class="flex-grow-1 px-xl-1">
-  {% if page.netease-cloud-music %}
-    {% include netease-cloud-music.html %}
-  {% endif %}
   {% for post in posts %}
     <article class="card-wrapper card">
       <a href="{{ post.url | relative_url }}" class="post-preview row g-0 flex-md-row-reverse">
