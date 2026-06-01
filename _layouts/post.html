@@ -100,9 +100,12 @@ script_includes:
       </div>
 
       <!-- 添加网易云音乐插件 -->
-      {% if page.music-id %}
-      {% include cloud-music.html %}
+      {% if page.netease-cloud-music %}
+        <div id="netease-cloud-music">
+          {% include netease-cloud-music.html %}
+        </div>
       {% endif %}
+      
     </div>
   </header>
 

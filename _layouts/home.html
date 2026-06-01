@@ -117,6 +117,10 @@ refactor: true
 </div>
 <!-- #post-list -->
 
+{% if page.netease-cloud-music %}
+  {% include netease-cloud-music.html %}
+{% endif %}
+
 {% if paginator.total_pages > 1 %}
   {% include post-paginator.html %}
 {% endif %}
