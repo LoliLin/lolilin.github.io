@@ -1,6 +1,7 @@
 {% if page.netease-cloud-music %}
   {% assign has_auto = false %}
   {% assign has_flow = false %}
+  {% assign oc_type = 2 %}
   
   {% if page.netease-cloud-music contains '$auto' %}
     {% assign has_auto = true %}
@@ -8,6 +9,12 @@
   
   {% if page.netease-cloud-music contains '$flow' %}
     {% assign has_flow = true %}
+  {% endif %}
+  {% if page.netease-cloud-music contains '$type3' %}
+    {% assign oc_type = 3 %}
+  {% endif %}
+  {% if page.netease-cloud-music contains '$type1' %}
+    {% assign oc_type = 1 %}
   {% endif %}
 
   {% if page.netease-cloud-music contains '$' %}
@@ -28,7 +35,7 @@
   {% endif %}
 
   <iframe frameborder="no" border="0" marginwidth="0" marginheight="0" width="330" height="86"
-          src="https://music.163.com/outchain/player?type=2&id={{ music_id }}&auto={{ auto_val }}&height=66", allow="autoplay">
+          src="https://music.163.com/outchain/player?type={{ oc_type }}&id={{ music_id }}&auto={{ auto_val }}&height=66", allow="autoplay">
   </iframe>
 
   {% if has_flow %}
