@@ -119,11 +119,9 @@ refactor: true
 
 {{ content }}
 
-{% if page.netease-cloud-music %}
-  <div class="netease-player">
-    {% include netease-cloud-music.html %}
-  </div>
-{% endif %}
+<div class="music-player">
+  {% include music-set.html %}
+</div>
 
 {% if paginator.total_pages > 1 %}
   {% include post-paginator.html %}
