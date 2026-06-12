@@ -1,0 +1,184 @@
+---
+layout: default
+---
+
+<article>
+  {{ content }}
+</article>
+
+{% comment %} 
+  ========== APlayer 播放器（支持 flow 悬浮窗模式） ==========
+  用法：
+  在 Front Matter 中定义 aplayer 对象，例如：
+  ---
+  aplayer:
+    server: netease
+    type: playlist
+    id: 60198
+    autoplay: false
+    theme: '#c34747'
+    flow: true          # 开启悬浮窗模式（可拖拽、记忆位置）
+  ---
+{% endcomment %}
+
+{% if page.aplayer %}
+  {% assign default_theme = '#2980b9' %}
+  {% assign default_autoplay = 'false' %}
+  {% assign default_flow = 'false' %}
+
+  {% comment %} 生成播放器标签的公共参数 {% endcomment %}
+  {% capture meting_attrs %}
+    server="{{ page.aplayer.server }}"
+    type="{{ page.aplayer.type }}"
+    id="{{ page.aplayer.id }}"
+    theme="{{ page.aplayer.theme | default: default_theme }}"
+    autoplay="{{ page.aplayer.autoplay | default: default_autoplay }}"
+    fixed="{{ page.aplayer.fixed | default: 'false' }}"
+    mini="{{ page.aplayer.mini | default: 'false' }}"
+    loop="{{ page.aplayer.loop | default: 'all' }}"
+    order="{{ page.aplayer.order | default: 'list' }}"
+    volume="{{ page.aplayer.volume | default: '0.7' }}"
+    mutex="{{ page.aplayer.mutex | default: 'true' }}"
+    list-max-height="{{ page.aplayer.list-max-height | default: '340px' }}"
+    preload="{{ page.aplayer.preload | default: 'auto' }}"
+    list-folded="{{ page.aplayer.list-folded | default: 'false' }}"
+  {% endcapture %}
+
+  {% if page.aplayer.flow == true %}
+    {% comment %} 悬浮窗模式：包裹在一个可拖拽的 div 中 {% endcomment %}
+    <div id="aplayer-flow" class="aplayer-flow-container">
+      <meting-js {{ meting_attrs }}></meting-js>
+    </div>
+
+    {% comment %} 拖拽悬浮窗的样式和脚本（模仿网易云 flow）{% endcomment %}
+    <style>
+      .aplayer-flow-container {
+        position: fixed !important;
+        bottom: 24px !important;
+        right: 24px !important;
+        z-index: 999999 !important;
+        cursor: grab;
+        user-select: none;
+        border-radius: 12px;
+        padding: 4px;
+        background: transparent;
+        transition: transform 0.2s ease, box-shadow 0.2s ease;
+      }
+      .aplayer-flow-container:active {
+        cursor: grabbing;
+      }
+      .aplayer-flow-container:hover {
+        transform: scale(1.05);
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.25);
+      }
+      /* 拖拽时禁用内部 iframe 的指针事件（APlayer 无 iframe，但保留兼容） */
+      .aplayer-flow-container.is-dragging iframe,
+      .aplayer-flow-container.is-dragging .aplayer {
+        pointer-events: none !important;
+      }
+    </style>
+
+    <script>
+      (function() {
+        const container = document.getElementById('aplayer-flow');
+        if (!container) return;
+
+        let isDragging = false;
+        let startX, startY, origX, origY;
+
+        // 恢复之前保存的位置
+        const savedX = localStorage.getItem('aplayer-flow-x');
+        const savedY = localStorage.getItem('aplayer-flow-y');
+        if (savedX && savedY) {
+          container.style.right = 'auto';
+          container.style.bottom = 'auto';
+          container.style.left = savedX + 'px';
+          container.style.top  = savedY + 'px';
+        }
+
+        container.addEventListener('mousedown', (e) => {
+          // 避免点击内部播放器按钮时触发拖拽（只有点击容器的 padding 或背景才拖拽）
+          if (e.target !== container && !container.contains(e.target)) return;
+          // 如果点击的元素是播放器内部的可交互元素（如按钮），不启动拖拽
+          if (e.target.closest('.aplayer-icon, .aplayer-button, .aplayer-list, input, button')) return;
+
+          isDragging = true;
+          container.classList.add('is-dragging');
+
+          const rect = container.getBoundingClientRect();
+          startX = e.clientX;
+          startY = e.clientY;
+          origX  = rect.left;
+          origY  = rect.top;
+
+          container.style.transition = 'none';
+          e.preventDefault(); // 防止偶尔选中文本
+        });
+
+        document.addEventListener('mousemove', (e) => {
+          if (!isDragging) return;
+          const dx = e.clientX - startX;
+          const dy = e.clientY - startY;
+          container.style.right = 'auto';
+          container.style.bottom = 'auto';
+          container.style.left = (origX + dx) + 'px';
+          container.style.top  = (origY + dy) + 'px';
+        });
+
+        document.addEventListener('mouseup', () => {
+          if (!isDragging) return;
+          isDragging = false;
+          container.classList.remove('is-dragging');
+          container.style.transition = 'transform 0.2s ease, box-shadow 0.2s ease';
+
+          const rect = container.getBoundingClientRect();
+          localStorage.setItem('aplayer-flow-x', rect.left);
+          localStorage.setItem('aplayer-flow-y', rect.top);
+        });
+      })();
+    </script>
+
+  {% else %}
+    {% comment %} 普通内联模式：直接输出播放器 {% endcomment %}
+    <div class="aplayer-container">
+      <meting-js {{ meting_attrs }}></meting-js>
+    </div>
+  {% endif %}
+
+  {% comment %} 
+    ========== 可选：主题跟随脚本（与之前一致） ==========
+    如果不需要深色模式自动切换，可以删除下面这段
+  {% endcomment %}
+  {% if page.aplayer.theme_follow != false %}
+    <script>
+      (function () {
+        // 简易主题检测（不依赖全局 Theme）
+        function getCurrentTheme() {
+          const htmlAttr = document.documentElement.getAttribute('data-theme');
+          if (htmlAttr === 'dark') return 'dark';
+          if (htmlAttr === 'light') return 'light';
+          return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+        }
+
+        const lightColor = '{{ page.aplayer.light_color | default: "#b7daff" }}';
+        const darkColor  = '{{ page.aplayer.dark_color | default: "#2d2d2d" }}';
+
+        function applyThemeToPlayers() {
+          const theme = getCurrentTheme();
+          const color = theme === 'dark' ? darkColor : lightColor;
+          document.querySelectorAll('.aplayer').forEach(container => {
+            if (container.aplayer && typeof container.aplayer.theme === 'function') {
+              container.aplayer.theme(color);
+            }
+          });
+        }
+
+        applyThemeToPlayers();
+
+        const observer = new MutationObserver(applyThemeToPlayers);
+        observer.observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
+        window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', applyThemeToPlayers);
+      })();
+    </script>
+  {% endif %}
+{% endif %}
