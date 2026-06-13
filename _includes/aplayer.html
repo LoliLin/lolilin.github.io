@@ -1,53 +1,53 @@
-{% comment %} 
-  ========== APlayer 播放器（支持 flow 悬浮窗模式） ==========
-  用法：
-  在 Front Matter 中定义 aplayer 对象，例如：
+{% comment %}
+  ========== APlayer 播放器（本地文件版） ==========
+  用法 - Front Matter:
   ---
   aplayer:
-    server: netease
-    type: playlist
-    id: 60198
     autoplay: false
     theme: '#c34747'
-    flow: true          # 开启悬浮窗模式（可拖拽、记忆位置）
+    flow: true          # 悬浮窗模式
+    listFolded: false
+    audio:
+      - name: 歌名
+        artist: 歌手
+        url: /assets/music/song1.mp3
+        cover: /assets/img/cover1.jpg
+      - name: 歌名2
+        artist: 歌手2
+        url: /assets/music/song2.mp3
+        cover: /assets/img/cover2.jpg
   ---
+  
+  全局悬浮播放器（所有页面共享）:
+  在 _config.yml 里配置 global_player:
+  ---
+  global_player:
+    autoplay: false
+    theme: '#c34747'
+    audio:
+      - name: ...
+  ---
+  然后在 default layout 的 </body> 前 include 这个文件即可。
 {% endcomment %}
 
-{% if page.aplayer %}
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/aplayer/dist/APlayer.min.css">
-  <script src="https://cdn.jsdelivr.net/npm/aplayer/dist/APlayer.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/meting@2/dist/Meting.min.js"></script>
-  
-  {% assign default_theme = '#2980b9' %}
-  {% assign default_autoplay = 'false' %}
-  {% assign default_flow = 'false' %}
+{% if page.aplayer or site.global_player %}
+  {% assign cfg = page.aplayer | default: site.global_player %}
 
-  {% comment %} 生成播放器标签的公共参数 {% endcomment %}
-  {% capture meting_attrs %}
-    server="{{ page.aplayer.server }}"
-    type="{{ page.aplayer.type }}"
-    id="{{ page.aplayer.id }}"
-    theme="{{ page.aplayer.theme | default: default_theme }}"
-    autoplay="{{ page.aplayer.autoplay | default: default_autoplay }}"
-    fixed="{{ page.aplayer.fixed | default: 'false' }}"
-    mini="{{ page.aplayer.mini | default: 'false' }}"
-    loop="{{ page.aplayer.loop | default: 'all' }}"
-    order="{{ page.aplayer.order | default: 'list' }}"
-    volume="{{ page.aplayer.volume | default: '0.7' }}"
-    mutex="{{ page.aplayer.mutex | default: 'true' }}"
-    list-max-height="{{ page.aplayer.list-max-height | default: '340px' }}"
-    preload="{{ page.aplayer.preload | default: 'auto' }}"
-    list-folded="{{ page.aplayer.list-folded | default: 'false' }}"
-  {% endcapture %}
+  {% if cfg.audio and cfg.audio.size > 0 %}
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/aplayer/dist/APlayer.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/aplayer/dist/APlayer.min.js"></script>
 
-  {% if page.aplayer.flow == true %}
-    {% comment %} 悬浮窗模式：包裹在一个可拖拽的 div 中 {% endcomment %}
-    <div id="aplayer-flow" class="aplayer-flow-container">
-      <meting-js {{ meting_attrs }}></meting-js>
-    </div>
+    {% comment %} 把 Liquid 的 audio 数组转成 JSON 给 JS 用 {% endcomment %}
+    {% assign audio_json = cfg.audio | jsonify %}
 
-    {% comment %} 拖拽悬浮窗的样式和脚本（模仿网易云 flow）{% endcomment %}
+    {% if cfg.flow == true %}
+      <div id="aplayer-flow" class="aplayer-flow-container"></div>
+    {% else %}
+      <div id="aplayer-container" class="aplayer-inline-container"></div>
+    {% endif %}
+
     <style>
+      /* ---- 基础容器 ---- */
       .aplayer-flow-container {
         position: fixed !important;
         bottom: 24px !important;
@@ -55,126 +55,243 @@
         z-index: 999999 !important;
         cursor: grab;
         user-select: none;
-        border-radius: 12px;
+        border-radius: var(--radius, 12px);
         padding: 4px;
         background: transparent;
         transition: transform 0.2s ease, box-shadow 0.2s ease;
+        max-width: 380px;
       }
-      .aplayer-flow-container:active {
-        cursor: grabbing;
-      }
+      .aplayer-flow-container:active { cursor: grabbing; }
       .aplayer-flow-container:hover {
         transform: scale(1.05);
         box-shadow: 0 8px 32px rgba(0, 0, 0, 0.25);
       }
-      /* 拖拽时禁用内部 iframe 的指针事件（APlayer 无 iframe，但保留兼容） */
-      .aplayer-flow-container.is-dragging iframe,
       .aplayer-flow-container.is-dragging .aplayer {
         pointer-events: none !important;
+      }
+      .aplayer-inline-container {
+        margin: 1rem 0;
+      }
+      /* 小屏适配 */
+      @media (max-width: 480px) {
+        .aplayer-flow-container {
+          right: 8px !important;
+          bottom: 8px !important;
+          max-width: 96vw;
+        }
+      }
+
+      /* ===== APlayer 暗色模式 ===== */
+      [data-mode="dark"] .aplayer {
+        background: #1e1e1e !important;
+        color: #ccc !important;
+        border-color: #333 !important;
+      }
+      [data-mode="dark"] .aplayer .aplayer-info .aplayer-music .aplayer-title {
+        color: #eee !important;
+      }
+      [data-mode="dark"] .aplayer .aplayer-info .aplayer-music .aplayer-author {
+        color: #999 !important;
+      }
+      [data-mode="dark"] .aplayer .aplayer-info .aplayer-controller .aplayer-bar-wrap .aplayer-bar {
+        background: #444 !important;
+      }
+      [data-mode="dark"] .aplayer .aplayer-info .aplayer-controller .aplayer-bar-wrap .aplayer-bar .aplayer-loaded {
+        background: #555 !important;
+      }
+      [data-mode="dark"] .aplayer .aplayer-info .aplayer-controller .aplayer-bar-wrap .aplayer-bar .aplayer-played {
+        background: {{ cfg.theme | default: '#2980b9' }} !important;
+      }
+      [data-mode="dark"] .aplayer .aplayer-info .aplayer-controller .aplayer-time {
+        color: #aaa !important;
+      }
+      [data-mode="dark"] .aplayer .aplayer-info .aplayer-controller .aplayer-volume-wrap .aplayer-volume-bar-wrap .aplayer-volume-bar {
+        background: #444 !important;
+      }
+      [data-mode="dark"] .aplayer .aplayer-list {
+        background: #1e1e1e !important;
+        border-color: #333 !important;
+      }
+      [data-mode="dark"] .aplayer .aplayer-list ol li {
+        color: #aaa !important;
+        border-color: #333 !important;
+      }
+      [data-mode="dark"] .aplayer .aplayer-list ol li:hover {
+        background: #2a2a2a !important;
+      }
+      [data-mode="dark"] .aplayer .aplayer-list ol li.aplayer-list-light {
+        background: #2a2a2a !important;
+        color: #eee !important;
+      }
+      [data-mode="dark"] .aplayer .aplayer-list ol li .aplayer-list-index {
+        color: #888 !important;
+      }
+      [data-mode="dark"] .aplayer .aplayer-list ol li .aplayer-list-author {
+        color: #888 !important;
+      }
+      [data-mode="dark"] .aplayer .aplayer-lrc:before {
+        background: linear-gradient(180deg, #1e1e1e 0%, transparent 100%) !important;
+      }
+      [data-mode="dark"] .aplayer .aplayer-lrc:after {
+        background: linear-gradient(0deg, #1e1e1e 0%, transparent 100%) !important;
+      }
+      [data-mode="dark"] .aplayer .aplayer-lrc p {
+        color: #ccc !important;
+      }
+      [data-mode="dark"] .aplayer .aplayer-lrc p.aplayer-lrc-current {
+        color: #fff !important;
       }
     </style>
 
     <script>
+    (function() {
+      var audioList = {{ audio_json }};
+      var themeColor = '{{ cfg.theme | default: "#2980b9" }}';
+      var container = document.getElementById('aplayer-flow') || document.getElementById('aplayer-container');
+      if (!container || !audioList.length) return;
+
+      // ======== 1. 恢复上次播放状态 ========
+      var saved = JSON.parse(localStorage.getItem('aplayer-state') || '{}');
+
+      // ======== 2. 创建 APlayer ========
+      var ap = new APlayer({
+        container: container,
+        audio: audioList,
+        theme: themeColor,
+        autoplay: saved.playing === true || {{ cfg.autoplay | default: false }},
+        loop: '{{ cfg.loop | default: "all" }}',
+        order: '{{ cfg.order | default: "list" }}',
+        volume: saved.volume !== undefined ? saved.volume : {{ cfg.volume | default: 0.7 }},
+        mutex: true,
+        listFolded: {{ cfg.listFolded | default: false }},
+        lrcType: {{ cfg.lrcType | default: 0 }},
+        preload: 'auto',
+      });
+
+      // ======== 3. 恢复歌曲位置 ========
+      // ======== 3. 恢复歌曲位置（严格匹配） ========
+      if (saved.index !== undefined && saved.audioUrl) {
+        // 检查 saved 的歌曲是否在当前播放列表里
+        var matchIndex = -1;
+        for (var i = 0; i < audioList.length; i++) {
+          if (audioList[i].url === saved.audioUrl) {
+            matchIndex = i;
+            break;
+          }
+        }
+        // 只有当前列表里有同一首歌才恢复
+        if (matchIndex !== -1) {
+          ap.list.switch(matchIndex);
+          if (saved.currentTime) {
+            var trySeek = function() {
+              if (ap.audio && ap.audio.readyState >= 2) {
+                ap.audio.currentTime = saved.currentTime;
+              } else {
+                setTimeout(trySeek, 300);
+              }
+            };
+            ap.on('loadeddata', trySeek);
+          }
+          // 如果之前是播放状态，手动触发播放（浏览器可能阻止 autoplay）
+        }
+        // matchIndex === -1: 当前页面没有这首歌，啥也不做，保持默认状态
+      }
+
+
+      // ======== 4. 离开页面时保存状态 ========
+      function saveState() {
+        if (!ap || !ap.audio) return;
+        var currentIndex = ap.list.index;
+        var currentAudio = audioList[currentIndex];
+        var state = {
+          index: currentIndex,
+          audioUrl: currentAudio ? currentAudio.url : null,  // ← 加上这个
+          currentTime: ap.audio.currentTime || 0,
+          playing: !ap.audio.paused,
+          volume: ap.audio.volume,
+          timestamp: Date.now(),
+        };
+        localStorage.setItem('aplayer-state', JSON.stringify(state));
+      }
+
+
+      // 定时保存（每 5 秒）
+      setInterval(saveState, 5000);
+      // 离开页面立即保存
+      window.addEventListener('beforeunload', saveState);
+      // 页面隐藏时也保存（移动端切后台）
+      document.addEventListener('visibilitychange', function() {
+        if (document.hidden) saveState();
+      });
+
+      // ======== 5. 暗色模式自动检测 + 监听切换 ========
+      function getTheme() {
+        var mode = document.documentElement.getAttribute('data-mode');
+        if (mode === 'dark') return 'dark';
+        if (mode === 'light') return 'light';
+        return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+      }
+
+      // 第一次启动时如果音频在播放但浏览器策略阻止了，静默处理
+      if (saved.playing) {
+        // 有些浏览器会阻止自动播放，没关系，用户手动点一下就好
+      }
+
+      // ======== 6. 拖拽逻辑 ========
       (function() {
-        const container = document.getElementById('aplayer-flow');
-        if (!container) return;
+        var el = document.getElementById('aplayer-flow');
+        if (!el) return;
 
-        let isDragging = false;
-        let startX, startY, origX, origY;
+        var isDragging = false;
+        var startX, startY, origX, origY;
 
-        // 恢复之前保存的位置
-        const savedX = localStorage.getItem('aplayer-flow-x');
-        const savedY = localStorage.getItem('aplayer-flow-y');
-        if (savedX && savedY) {
-          container.style.right = 'auto';
-          container.style.bottom = 'auto';
-          container.style.left = savedX + 'px';
-          container.style.top  = savedY + 'px';
+        var restoredX = localStorage.getItem('aplayer-flow-x');
+        var restoredY = localStorage.getItem('aplayer-flow-y');
+        if (restoredX && restoredY) {
+          el.style.right = 'auto';
+          el.style.bottom = 'auto';
+          el.style.left = restoredX + 'px';
+          el.style.top = restoredY + 'px';
         }
 
-        container.addEventListener('mousedown', (e) => {
-          // 避免点击内部播放器按钮时触发拖拽（只有点击容器的 padding 或背景才拖拽）
-          if (e.target !== container && !container.contains(e.target)) return;
-          // 如果点击的元素是播放器内部的可交互元素（如按钮），不启动拖拽
+        el.addEventListener('mousedown', function(e) {
           if (e.target.closest('.aplayer-icon, .aplayer-button, .aplayer-list, input, button')) return;
-
           isDragging = true;
-          container.classList.add('is-dragging');
-
-          const rect = container.getBoundingClientRect();
+          el.classList.add('is-dragging');
+          var rect = el.getBoundingClientRect();
           startX = e.clientX;
           startY = e.clientY;
-          origX  = rect.left;
-          origY  = rect.top;
-
-          container.style.transition = 'none';
-          e.preventDefault(); // 防止偶尔选中文本
+          origX = rect.left;
+          origY = rect.top;
+          el.style.transition = 'none';
+          e.preventDefault();
         });
 
-        document.addEventListener('mousemove', (e) => {
+        document.addEventListener('mousemove', function(e) {
           if (!isDragging) return;
-          const dx = e.clientX - startX;
-          const dy = e.clientY - startY;
-          container.style.right = 'auto';
-          container.style.bottom = 'auto';
-          container.style.left = (origX + dx) + 'px';
-          container.style.top  = (origY + dy) + 'px';
+          var dx = e.clientX - startX;
+          var dy = e.clientY - startY;
+          el.style.right = 'auto';
+          el.style.bottom = 'auto';
+          el.style.left = (origX + dx) + 'px';
+          el.style.top = (origY + dy) + 'px';
         });
 
-        document.addEventListener('mouseup', () => {
+        document.addEventListener('mouseup', function() {
           if (!isDragging) return;
           isDragging = false;
-          container.classList.remove('is-dragging');
-          container.style.transition = 'transform 0.2s ease, box-shadow 0.2s ease';
-
-          const rect = container.getBoundingClientRect();
+          el.classList.remove('is-dragging');
+          el.style.transition = 'transform 0.2s ease, box-shadow 0.2s ease';
+          var rect = el.getBoundingClientRect();
           localStorage.setItem('aplayer-flow-x', rect.left);
           localStorage.setItem('aplayer-flow-y', rect.top);
         });
       })();
-    </script>
 
+    })();
+    </script>
   {% else %}
-    {% comment %} 普通内联模式：直接输出播放器 {% endcomment %}
-    <div class="aplayer-container">
-      <meting-js {{ meting_attrs }}></meting-js>
-    </div>
-  {% endif %}
-
-  {% comment %} 
-    ========== 可选：主题跟随脚本（与之前一致） ==========
-    如果不需要深色模式自动切换，可以删除下面这段
-  {% endcomment %}
-  {% if page.aplayer.theme_follow != false %}
-    <script>
-      (function () {
-        // 简易主题检测（不依赖全局 Theme）
-        function getCurrentTheme() {
-          const htmlAttr = document.documentElement.getAttribute('data-theme');
-          if (htmlAttr === 'dark') return 'dark';
-          if (htmlAttr === 'light') return 'light';
-          return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
-        }
-
-        const lightColor = '{{ page.aplayer.light_color | default: "#b7daff" }}';
-        const darkColor  = '{{ page.aplayer.dark_color | default: "#2d2d2d" }}';
-
-        function applyThemeToPlayers() {
-          const theme = getCurrentTheme();
-          const color = theme === 'dark' ? darkColor : lightColor;
-          document.querySelectorAll('.aplayer').forEach(container => {
-            if (container.aplayer && typeof container.aplayer.theme === 'function') {
-              container.aplayer.theme(color);
-            }
-          });
-        }
-
-        applyThemeToPlayers();
-
-        const observer = new MutationObserver(applyThemeToPlayers);
-        observer.observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
-        window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', applyThemeToPlayers);
-      })();
-    </script>
+    <!-- APlayer: audio 列表为空，跳过 -->
   {% endif %}
 {% endif %}
+

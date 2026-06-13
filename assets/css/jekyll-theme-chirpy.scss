@@ -8,3 +8,54 @@
 ';
 
 /* append your custom style below */
+
+.ripple-dot {
+  position: absolute;
+  border-radius: 50%;
+  pointer-events: none;
+  transform: translate(-50%, -50%);
+}
+
+.ripple-dot::before,
+.ripple-dot::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  animation: ripple-anim 0.7s ease-out forwards;
+}
+
+.ripple-dot::before {
+  animation-delay: 0s;
+}
+
+.ripple-dot::after {
+  animation-delay: 0.15s;
+  opacity: 0.65;
+}
+
+[data-mode="dark"] .ripple-dot::before,
+[data-mode="dark"] .ripple-dot::after {
+  background: rgba(255, 255, 255, 0.45);
+}
+[data-mode="light"] .ripple-dot::before,
+[data-mode="light"] .ripple-dot::after {
+  background: rgba(0, 0, 0, 0.2);
+}
+
+@keyframes ripple-anim {
+  0% {
+    transform: scale(0);
+    opacity: 0.7;
+  }
+  30% {
+    opacity: 0.7;
+  }
+  100% {
+    transform: scale(1);
+    opacity: 0;
+  }
+}
