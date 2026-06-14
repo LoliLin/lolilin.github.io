@@ -2,6 +2,7 @@
 
 <script>
 (function() {
+  // $$$ ripple script
   // 创建容器
   var container = document.createElement('div');
   container.className = 'ripple-container';
@@ -37,4 +38,130 @@
     });
   });
 })();
+</script>
+
+<script>
+// 定义转换函数类型：接收原始 HTML 字符串，返回修改后的 HTML 字符串
+class TransformedIframe extends HTMLElement {
+  static observedAttributes = ['src', 'function'];
+
+  constructor() {
+    super();
+    // 创建 shadow DOM 可避免组件内部样式泄漏，但不是必须的（也可直接操作 innerHTML）
+    this.attachShadow({ mode: 'open' });
+    // 只需要一个 iframe 元素用于渲染最终内容
+    this.iframe = document.createElement('iframe');
+    this.iframe.style.width = '100%';
+    this.iframe.style.height = '100%';
+    this.iframe.style.border = 'none';
+    this.shadowRoot.appendChild(this.iframe);
+
+    this.currentSrc = null;
+    this.abortController = null;
+    this._customTransformFn = null;      // 用户直接赋值的函数
+    this._attrTransformFn = null;        // 从 function 属性解析的全局函数
+  }
+
+  // 获取当前生效的转换函数
+  get transformFn() {
+    return this._customTransformFn ?? this._attrTransformFn;
+  }
+
+  // 设置转换函数（优先级高于 function 属性）
+  set transformFn(fn) {
+    if (typeof fn === 'function') {
+      this._customTransformFn = fn;
+      this._attrTransformFn = null;   // 清除属性来源的函数
+    } else {
+      this._customTransformFn = null;
+      this._resolveFunctionFromAttribute();
+    }
+    this.loadContent();
+  }
+
+  // 从 'function' 属性解析全局函数
+  _resolveFunctionFromAttribute() {
+    const funcName = this.getAttribute('function');
+    if (funcName && typeof window[funcName] === 'function') {
+      this._attrTransformFn = window[funcName];
+    } else {
+      this._attrTransformFn = null;
+    }
+  }
+
+  connectedCallback() {
+    this._resolveFunctionFromAttribute();
+    this.loadContent();
+  }
+
+  attributeChangedCallback(name, oldValue, newValue) {
+    if (oldValue === newValue) return;
+    if (name === 'src') {
+      this.loadContent();
+    } else if (name === 'function') {
+      this._resolveFunctionFromAttribute();
+      this.loadContent();
+    }
+  }
+
+  // 取消正在进行的请求
+  _abortPendingFetch() {
+    if (this.abortController) {
+      this.abortController.abort();
+      this.abortController = null;
+    }
+  }
+
+  // 核心加载 + 转换逻辑
+  async loadContent() {
+    const src = this.getAttribute('src');
+    if (!src) {
+      this.iframe.srcdoc = '';
+      return;
+    }
+
+    this._abortPendingFetch();
+    this.abortController = new AbortController();
+    const signal = this.abortController.signal;
+
+    try {
+      const response = await fetch(src, { signal });
+      if (!response.ok) throw new Error(`HTTP ${response.status}`);
+      let originalHtml = await response.text();
+
+      const transform = this.transformFn;
+      let finalHtml = originalHtml;
+      if (transform && typeof transform === 'function') {
+        try {
+          finalHtml = transform(originalHtml);
+          if (typeof finalHtml !== 'string') finalHtml = originalHtml;
+        } catch (err) {
+          console.error('转换函数执行失败:', err);
+        }
+      }
+
+      this.iframe.srcdoc = finalHtml;
+    } catch (err) {
+      if (err.name !== 'AbortError') {
+        console.error('加载失败:', err);
+        // 可选：显示错误信息在 iframe 中
+        this.iframe.srcdoc = `<div style="color:red;padding:1rem;">加载失败: ${err.message}</div>`;
+      }
+    } finally {
+      this.abortController = null;
+    }
+  }
+
+  // 手动刷新
+  reload() {
+    this.loadContent();
+  }
+
+  disconnectedCallback() {
+    this._abortPendingFetch();
+  }
+}
+
+// 注册自定义元素（必须带连字符）
+customElements.define('transformed-iframe', TransformedIframe);
 </script>
