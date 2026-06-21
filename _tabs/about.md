@@ -2,7 +2,7 @@
 # the default layout is 'page'
 icon: fas fa-info-circle
 order: 4
-netease-cloud-music: 32431066$auto$flow
+netease-cloud-music: 2519213563$auto$type3$flow
 title: 关乎此间
 ---
 
