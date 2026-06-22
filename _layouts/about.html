@@ -4,7 +4,16 @@ layout: default
 
 {% include lang.html %}
 
-<style>
+<article class="px-1">
+    {% assign title = page.title %}
+    <h1 class="dynamic-title">
+      {{ title }}
+    </h1>
+    
+    <div class="content" style="text-autospace: ideograph-alpha ideograph-numeric ideograph-parenthesis;">
+        
+        <div class="terminal-container">
+          <style>
     /* 专属于该页面的终端与正文样式 */
     :root {
         --bg-color: #0d1117;
@@ -93,16 +102,6 @@ layout: default
     .content-area ul { padding-left: 20px; }
     .content-area li { margin-bottom: 10px; }
 </style>
-
-<article class="px-1">
-    {% assign title = page.title %}
-    <h1 class="dynamic-title">
-      {{ title }}
-    </h1>
-    
-    <div class="content" style="text-autospace: ideograph-alpha ideograph-numeric ideograph-parenthesis;">
-        
-        <div class="terminal-container">
             <div class="terminal" id="terminal">
                 <div class="terminal-header">
                     <div class="dot dot-red"></div>
@@ -126,11 +125,15 @@ layout: default
 
 <script>
 (function() {
-    const terminalBody = document.getElementById("terminal-body");
-    const mainContent = document.getElementById("main-content");
-    const terminal = document.getElementById("terminal");
+    const terminalBody = document.getElementById('terminal-body');
+    const mainContent = document.getElementById('main-content');
+    const terminal = document.getElementById('terminal');
 
-    if (!terminalBody || !mainContent) return; // 容错
+    // 如果元素还没出现，延迟重试（处理 pjax/动态加载）
+    if (!terminalBody || !mainContent) {
+        requestAnimationFrame(arguments.callee);
+        return;
+    }
 
     const script = [
         ["cmd", "guest@kawaiis.in:~# grep -R \"Lolin\" ./verse", 400],
@@ -145,12 +148,12 @@ layout: default
     let currentLine = 0;
 
     function createLine(type, text) {
-        const lineDiv = document.createElement("div");
-        lineDiv.className = "line";
-        if (type === "cmd") {
-            lineDiv.innerHTML = `<span class="command">${text}</span>`;
-        } else if (type === "success") {
-            lineDiv.innerHTML = `<span class="success">${text}</span>`;
+        const lineDiv = document.createElement('div');
+        lineDiv.className = 'line';
+        if (type === 'cmd') {
+            lineDiv.innerHTML = '<span class="command">' + text + '</span>';
+        } else if (type === 'success') {
+            lineDiv.innerHTML = '<span class="success">' + text + '</span>';
         } else {
             lineDiv.textContent = text;
         }
@@ -159,39 +162,29 @@ layout: default
 
     function runScript() {
         if (currentLine < script.length) {
-            const [type, text, delay] = script[currentLine];
-            const oldCursor = document.querySelector(".cursor");
+            var _a = script[currentLine], type = _a[0], text = _a[1], delay = _a[2];
+            var oldCursor = document.querySelector('.cursor');
             if (oldCursor) oldCursor.remove();
-
-            const lineElement = createLine(type, text);
-            const cursor = document.createElement("span");
-            cursor.className = "cursor";
+            var lineElement = createLine(type, text);
+            var cursor = document.createElement('span');
+            cursor.className = 'cursor';
             lineElement.appendChild(cursor);
-
             terminalBody.appendChild(lineElement);
-            // 平滑滚动到底部，但避免频繁抖动
             terminal.scrollTop = terminal.scrollHeight;
-            window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
-
             currentLine++;
             setTimeout(runScript, delay);
         } else {
-            setTimeout(() => {
-                const oldCursor = terminalBody.querySelector(".cursor");
+            setTimeout(function() {
+                var oldCursor = terminalBody.querySelector('.cursor');
                 if (oldCursor) oldCursor.remove();
-                mainContent.classList.add("visible");
+                mainContent.classList.add('visible');
             }, 200);
         }
     }
 
-    function startWhenReady() {
-        setTimeout(runScript, 150); // 比原100ms稍长一点，给样式一些缓冲
-    }
-
-    if (document.readyState === 'complete') {
-        startWhenReady();
-    } else {
-        window.addEventListener('load', startWhenReady);
-    }
+    // 使用 requestAnimationFrame 确保 DOM 已稳定
+    requestAnimationFrame(function() {
+        setTimeout(runScript, 100);
+    });
 })();
 </script>
