@@ -2,7 +2,7 @@
 layout: about
 icon: fas fa-info-circle
 order: 4
-netease-cloud-music: 2519213563$auto$type3$flow
+netease-cloud-music: 2519213563$auto$type3
 title: 关乎此间
 ---
 
