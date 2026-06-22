@@ -197,3 +197,77 @@ layout: page
     const nodesDataSet = new vis.DataSet(nodesArray);
     const data = {
       nodes: nodesDataSet,
+      edges: new vis.DataSet(edgesArray)
+    };
+    
+    const options = {
+      nodes: {
+        margin: { top: 12, bottom: 12, left: 16, right: 16 } /* 给文字球内部留点呼吸边距 */
+      },
+      physics: {
+        forceAtlas2Based: {
+          gravitationalConstant: -40,
+          centralGravity: 0.05, /* 中心引力控场，锁死边界 */
+          springLength: 110,
+          springConstant: 0.07
+        },
+        solver: 'forceAtlas2Based',
+        stabilization: { enabled: true, iterations: 120 }
+      },
+      interaction: {
+        hover: true,
+        zoomView: true,
+        dragView: true
+      }
+    };
+
+    const network = new vis.Network(container, data, options);
+
+    /* --- Step E: 官方原生 Render 驱动卫星轻量公转 (稳如泰山) --- */
+    network.on("render", function () {
+      let updateBuffer = [];
+
+      nodesDataSet.forEach(node => {
+        if (node.isSatellite) {
+          node.satAngle += node.satSpeed;
+          const newX = Math.cos(node.satAngle) * node.satRadius;
+          const newY = Math.sin(node.satAngle) * node.satRadius;
+          
+          updateBuffer.push({ 
+            id: node.id, 
+            x: newX, 
+            y: newY, 
+            satAngle: node.satAngle 
+          });
+        }
+      });
+
+      if (updateBuffer.length > 0) {
+        /* 官方标准的 DataSet 异步微调，绝对不会引发黑屏或死循环 */
+        nodesDataSet.update(updateBuffer);
+      }
+    });
+
+    /* 解算完成后自适应居中 */
+    network.once("stabilizationIterationsDone", function () {
+      network.fit({
+        animation: { duration: 1000, easingFunction: 'easeInOutQuad' }
+      });
+    });
+
+    /* --- Step F: 穿越跳转 --- */
+    network.on("click", function(params) {
+      if (params.nodes.length > 0) {
+        const selectedTag = params.nodes[0];
+        const slugifiedTag = encodeURIComponent(selectedTag.toLowerCase().replace(/[^a-z0-9\u4e00-\u9fa5]/g, '-'));
+        const targetUrl = `{{ '/tags/' | relative_url }}${slugifiedTag}/`;
+        
+        setTimeout(() => {
+          window.location.href = targetUrl;
+        }, 150);
+      }
+    });
+  });
+</script>
+
+</div>
