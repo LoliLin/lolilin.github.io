@@ -1,5 +1,5 @@
 ---
-# the default layout is 'page'
+layout: about
 icon: fas fa-info-circle
 order: 4
 netease-cloud-music: 2519213563$auto$type3$flow
@@ -7,13 +7,6 @@ title: 关乎此间
 ---
 
 > “不见其发端，也不见其终极。我们只是在螺旋的中间，温柔又顽强地编译着自己。”
-
-##
-
-```bash
-> grep -R "Lolin" ./verse
- A password changes, a trend fades, but a well-architected philosophy remains compile-ready.
-```
 
 欢迎来到这个坐标。这里是 `blog.kawaiis.in` 的核心节点。
 
