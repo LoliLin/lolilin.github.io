@@ -4,180 +4,213 @@ layout: default
 
 {% include lang.html %}
 
-<style>
-    .about-wrapper {
-        width: 100%;
-        max-width: 800px;
-        margin: 0 auto;
-        position: relative;
-    }
+<article class="px-1">
+    {% assign title = page.title %}
+    <h1 class="dynamic-title">
+      {{ title }}
+    </h1>
+    <div class="content" style="text-autospace: ideograph-alpha ideograph-numeric ideograph-parenthesis;">
 
-    #terminal-iframe {
-        width: 100%;
-        height: 240px; 
-        border: none;
-        background: transparent;
-        display: block;
-        transition: height 0.3s ease-out;
-    }
+      <iframe id="terminal-iframe" srcdoc='
 
-    /* 原始容器：Jekyll 渲染，交给 JS 移走 */
-    #jekyll-source-content {
-        display: none;
-    }
-</style>
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>关乎此间 | Lolin Verse</title>
+    <style>
+        :root {
+            --bg-color: #0d1117;
+            --text-color: #c9d1d9;
+            --accent-color: #58a6ff;
+            --terminal-green: #39ff14;
+            --border-color: #30363d;
+            --quote-bg: #161b22;
+        }
 
-<div class="about-wrapper">
-    <div id="jekyll-source-content">
-        <div id="lolin-pure-content" style="opacity: 0; transform: translateY(10px); transition: opacity 0.6s ease, transform 0.6s ease;">
-            <article class="px-1">
-                {% assign title = page.title %}
-                <h1 class="dynamic-title">{{ title }}</h1>
-                <div class="content" style="text-autospace: ideograph-alpha ideograph-numeric ideograph-parenthesis;">
-                    {{ content }}
-                </div>
-            </article>
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+            line-height: 1.6;
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            min-height: 100vh;
+            box-sizing: border-box;
+        }
 
-            <div class="music-player">
-                {% include music-set.html %}
-            </div>
+        .container {
+            width: 100%;
+            max-width: 800px;
+        }
+
+        .terminal {
+            background-color: #05070a;
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            padding: 20px;
+            font-family: "Courier New", Courier, monospace;
+            color: #f0f6fc;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            margin-bottom: 30px;
+        }
+
+        .terminal-header {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 15px;
+            border-bottom: 1px solid var(--border-color);
+            padding-bottom: 10px;
+        }
+
+        .dot { width: 12px; height: 12px; border-radius: 50%; }
+        .dot-red { background-color: #ff5f56; }
+        .dot-yellow { background-color: #ffbd2e; }
+        .dot-green { background-color: #27c93f; }
+
+        .line { margin: 3px 0; white-space: pre-wrap; word-break: break-all; }
+        .command { color: var(--accent-color); }
+        .success { color: var(--terminal-green); }
+
+        .cursor {
+            display: inline-block;
+            width: 8px;
+            height: 18px;
+            background-color: var(--terminal-green);
+            animation: blink 1s infinite;
+            vertical-align: middle;
+            margin-left: 4px;
+        }
+
+        @keyframes blink { 0%, 49% { opacity: 1; } 50%, 100% { opacity: 0; } }
+
+        /* 正文平滑切入 */
+        #main-content {
+            opacity: 0;
+            transform: translateY(10px);
+            transition: opacity 0.6s cubic-bezier(0.16, 1, 0.3, 1), transform 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+            display: none;
+        }
+
+        #main-content.visible {
+            display: block;
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        h1, h2, h3 { color: #ffffff; border-bottom: 1px solid var(--border-color); padding-bottom: 5px; }
+        h1 { font-size: 2rem; }
+        h2 { font-size: 1.5rem; margin-top: 30px; }
+        a { color: var(--accent-color); text-decoration: none; }
+        a:hover { text-decoration: underline; }
+        blockquote {
+            background-color: var(--quote-bg);
+            border-left: 4px solid var(--accent-color);
+            margin: 20px 0;
+            padding: 15px;
+            font-style: italic;
+            border-radius: 0 4px 4px 0;
+        }
+        pre code { display: block; padding: 15px; overflow-x: auto; background-color: #161b22; border: 1px solid var(--border-color); }
+        ul { padding-left: 20px; }
+        li { margin-bottom: 10px; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div class="terminal" id="terminal">
+        <div class="terminal-header">
+            <div class="dot dot-red"></div>
+            <div class="dot dot-yellow"></div>
+            <div class="dot dot-green"></div>
+            <span style="margin-left: 10px; font-size: 12px; color: #8b949e;">bash — blog.kawaiis.in</span>
         </div>
+        <div id="terminal-body"></div>
     </div>
 
-    <iframe id="terminal-iframe" srcdoc='
-        <!DOCTYPE html>
-        <html>
-        <head>
-            <style>
-                body { margin: 0; background: transparent; font-family: -apple-system, BlinkMacSystemFont, sans-serif; color: #c9d1d9; line-height: 1.6; }
-                .terminal {
-                    background-color: #05070a;
-                    border: 1px solid #30363d;
-                    border-radius: 6px;
-                    padding: 20px;
-                    font-family: "Courier New", Courier, monospace;
-                    color: #f0f6fc;
-                    box-shadow: 0 10px 30px rgba(0,0,0,0.5);
-                    box-sizing: border-box;
-                    height: 220px;
-                    margin-bottom: 20px;
-                }
-                .terminal-header { display: flex; gap: 8px; margin-bottom: 15px; border-bottom: 1px solid #30363d; padding-bottom: 10px; }
-                .dot { width: 12px; height: 12px; border-radius: 50%; }
-                .dot-red { background-color: #ff5f56; }
-                .dot-yellow { background-color: #ffbd2e; }
-                .dot-green { background-color: #27c93f; }
-                .line { margin: 3px 0; white-space: pre-wrap; word-break: break-all; font-size: 14px; }
-                .command { color: #58a6ff; }
-                .success { color: #39ff14; }
-                .cursor { display: inline-block; width: 8px; height: 18px; background-color: #39ff14; animation: blink 1s infinite; vertical-align: middle; margin-left: 4px; }
-                @keyframes blink { 0%, 49% { opacity: 1; } 50%, 100% { opacity: 0; } }
-
-                #sandbox-content {
-                    display: block;
-                    width: 100%;
-                }
-                h1, h2, h3 { color: #ffffff; }
-                a { color: #58a6ff; text-decoration: none; }
-                a:hover { text-decoration: underline; }
-            </style>
-        </head>
-        <body>
-            <div class="terminal" id="terminal">
-                <div class="terminal-header">
-                    <div class="dot dot-red"></div>
-                    <div class="dot dot-yellow"></div>
-                    <div class="dot dot-green"></div>
-                    <span style="margin-left: 10px; font-size: 12px; color: #8b949e;">bash — blog.kawaiis.in</span>
-                </div>
-                <div id="terminal-body"></div>
-            </div>
-
-            <div id="sandbox-content"></div>
-
-            <script>
-                const terminalBody = document.getElementById("terminal-body");
-                const script = [
-                    ["cmd", "guest@kawaiis.in:~# grep -R \"Lolin\" ./verse", 150],
-                    ["log", ">> A password changes, a trend fades, but a well-architected philosophy remains compile-ready.", 200],
-                    ["cmd", "guest@kawaiis.in:~# curl -s https://blog.kawaiis.in/api/lolin-verse | decrypt", 150],
-                    ["log", "[INFO] Decrypting \"小狐狸.sys\" [████████████████████] 100%", 300],
-                    ["cmd", "guest@kawaiis.in:~# ./compile_life.sh --mode=\"gentle\"", 150],
-                    ["log", "Loading memories: Chongqing steps, Shenzhen airport, hot showers...", 400],
-                    ["cmd", "guest@kawaiis.in:~# cat overview.md", 100],
-                    ["success", "EOF\nSystem rebooting... Status: SUCCESS.", 200]
-                ];
-
-                let currentLine = 0;
-                function runScript() {
-                    if (currentLine < script.length) {
-                        const [type, text, delay] = script[currentLine];
-                        const oldCursor = document.querySelector(".cursor");
-                        if (oldCursor) oldCursor.remove();
-
-                        const lineDiv = document.createElement("div");
-                        lineDiv.className = "line";
-                        if (type === "cmd") lineDiv.innerHTML = `<span class=\"command\">${text}</span>`;
-                        else if (type === "success") lineDiv.innerHTML = `<span class=\"success\">${text}</span>`;
-                        else lineDiv.textContent = text;
-
-                        const cursor = document.createElement("span");
-                        cursor.className = "cursor";
-                        lineDiv.appendChild(cursor);
-                        terminalBody.appendChild(lineDiv);
-
-                        currentLine++;
-                        setTimeout(runScript, delay);
-                    } else {
-                        setTimeout(() => {
-                            const oldCursor = document.querySelector(".cursor");
-                            if (oldCursor) oldCursor.remove();
-                            
-                            // 跑完后通知父页面：可以展开正文了
-                            window.parent.postMessage("terminal_done", "*");
-                        }, 200);
-                    }
-                }
-                window.onload = () => setTimeout(runScript, 100);
-            </script>
-        </body>
-        </html>
-    '></iframe>
+    <article id="main-content">
+        {{ content }}
+        <div class="music-player">
+          {% include music-set.html %}
+        </div>
+    </article>
 </div>
 
 <script>
-    const iframe = document.getElementById('terminal-iframe');
-    const sourceContent = document.getElementById('jekyll-source-content');
+    const terminalBody = document.getElementById("terminal-body");
+    const mainContent = document.getElementById("main-content");
+    const terminal = document.getElementById("terminal");
 
-    // 1. 骨架一就绪，立刻把正文移植进沙盒（此时内部依旧是 opacity: 0，不露痕迹）
-    iframe.addEventListener('load', () => {
-        const iframeDoc = iframe.contentDocument || iframe.contentWindow.document;
-        const sandboxTarget = iframeDoc.getElementById('sandbox-content');
-        
-        if (sandboxTarget && sourceContent) {
-            sandboxTarget.appendChild(sourceContent);
-            sourceContent.style.display = 'block'; 
+    // 高速执行剧本：大幅缩减延迟
+    const script = [
+        ["cmd", "guest@kawaiis.in:~# grep -R "Lolin" ./verse", 400],
+        ["log", ">> A password changes, a trend fades, but a well-architected philosophy remains compile-ready.", 200],
+        ["cmd", "guest@kawaiis.in:~# curl -s https://blog.kawaiis.in/api/lolin-verse | decrypt", 250],
+        ["log", "[INFO] Decrypting "小狐狸.sys" [████████████████████] 100%", 400],
+        ["cmd", "guest@kawaiis.in:~# ./compile_life.sh --mode="gentle"", 150],
+        ["log", "Loading memories: ...", 400],
+        ["cmd", "guest@kawaiis.in:~# cat overview.md", 300]
+    ];
+
+    let currentLine = 0;
+
+    function createLine(type, text) {
+        const lineDiv = document.createElement("div");
+        lineDiv.className = "line";
+        if (type === "cmd") {
+            lineDiv.innerHTML = `<span class="command">${text}</span>`;
+        } else if (type === "success") {
+            lineDiv.innerHTML = `<span class="success">${text}</span>`;
+        } else {
+            lineDiv.textContent = text;
         }
-    });
+        return lineDiv;
+    }
 
-    // 2. 收到结束信号后，精准计算高度并展开
-    window.addEventListener("message", function(event) {
-        if (event.data === "terminal_done") {
-            const iframeDoc = iframe.contentDocument || iframe.contentWindow.document;
-            const targetVisual = iframeDoc.getElementById('lolin-pure-content');
+    function runScript() {
+        if (currentLine < script.length) {
+            const [type, text, delay] = script[currentLine];
             
-            if (targetVisual) {
-                // 先显示出来，以便让浏览器计算真实高度
-                targetVisual.style.opacity = "1";
-                targetVisual.style.transform = "translateY(0)";
+            const oldCursor = document.querySelector(".cursor");
+            if (oldCursor) oldCursor.remove();
+
+            const lineElement = createLine(type, text);
+            
+            const cursor = document.createElement("span");
+            cursor.className = "cursor";
+            lineElement.appendChild(cursor);
+            
+            terminalBody.appendChild(lineElement);
+            terminal.scrollTop = terminal.scrollHeight;
+            
+            currentLine++;
+            setTimeout(runScript, delay);
+        } else {
+            // 结束时平滑但快速地切入正文
+            setTimeout(() => {
+                const oldCursor = document.querySelector(".cursor");
+                if (oldCursor) oldCursor.remove();
                 
-                // 延迟 50 毫秒等待网易云外链等组件撑开 DOM，再计算最终高度
-                setTimeout(() => {
-                    const finalHeight = iframeDoc.body.scrollHeight;
-                    iframe.style.height = (finalHeight + 50) + "px";
-                }, 50);
-            }
+                mainContent.style.display = "block";
+                mainContent.offsetHeight; 
+                mainContent.classList.add("visible");
+            }, 200);
         }
-    });
+    }
+
+    window.onload = () => {
+        setTimeout(runScript, 100);
+    };
 </script>
- 
+
+</body>
+</html>
+
+        '></iframe>
+    </div>
+</article>
