@@ -9,19 +9,19 @@ layout: default
         width: 100%;
         max-width: 800px;
         margin: 0 auto;
+        position: relative;
     }
 
-    /* 初始高度给终端大小，后面动态撑开 */
     #terminal-iframe {
         width: 100%;
         height: 240px; 
         border: none;
         background: transparent;
         display: block;
-        transition: height 0.4s ease; /* 撑开高度时有平滑过渡 */
+        transition: height 0.3s ease-out;
     }
 
-    /* 这里的原始容器只负责给 Jekyll 渲染，渲染完后会被 JS 移走，所以设为 display: none */
+    /* 原始容器：Jekyll 渲染，交给 JS 移走 */
     #jekyll-source-content {
         display: none;
     }
@@ -29,16 +29,18 @@ layout: default
 
 <div class="about-wrapper">
     <div id="jekyll-source-content">
-        <article class="px-1">
-            {% assign title = page.title %}
-            <h1 class="dynamic-title">{{ title }}</h1>
-            <div class="content" style="text-autospace: ideograph-alpha ideograph-numeric ideograph-parenthesis;">
-                {{ content }}
-            </div>
-        </article>
+        <div id="lolin-pure-content" style="opacity: 0; transform: translateY(10px); transition: opacity 0.6s ease, transform 0.6s ease;">
+            <article class="px-1">
+                {% assign title = page.title %}
+                <h1 class="dynamic-title">{{ title }}</h1>
+                <div class="content" style="text-autospace: ideograph-alpha ideograph-numeric ideograph-parenthesis;">
+                    {{ content }}
+                </div>
+            </article>
 
-        <div class="music-player">
-            {% include music-set.html %}
+            <div class="music-player">
+                {% include music-set.html %}
+            </div>
         </div>
     </div>
 
@@ -71,19 +73,10 @@ layout: default
                 .cursor { display: inline-block; width: 8px; height: 18px; background-color: #39ff14; animation: blink 1s infinite; vertical-align: middle; margin-left: 4px; }
                 @keyframes blink { 0%, 49% { opacity: 1; } 50%, 100% { opacity: 0; } }
 
-                /* 沙盒内的正文容器，动画完结后展现 */
                 #sandbox-content {
-                    opacity: 0;
-                    transform: translateY(10px);
-                    transition: opacity 0.6s cubic-bezier(0.16, 1, 0.3, 1), transform 0.6s cubic-bezier(0.16, 1, 0.3, 1);
-                    display: none;
-                }
-                #sandbox-content.visible {
                     display: block;
-                    opacity: 1;
-                    transform: translateY(0);
+                    width: 100%;
                 }
-                /* 继承或微调 Jekyll 原文在暗色下的基础样式 */
                 h1, h2, h3 { color: #ffffff; }
                 a { color: #58a6ff; text-decoration: none; }
                 a:hover { text-decoration: underline; }
@@ -105,13 +98,14 @@ layout: default
             <script>
                 const terminalBody = document.getElementById("terminal-body");
                 const script = [
-        ['cmd', 'guest@kawaiis.in:~# grep -R "Lolin" ./verse', 400],
-        ['log', '>> A password changes, a trend fades, but a well-architected philosophy remains compile-ready.', 200],
-        ['cmd', 'guest@kawaiis.in:~# curl -s https://blog.kawaiis.in/api/lolin-verse | decrypt', 250],
-        ['log', '[INFO] Decrypting "小狐狸.sys" [████████████████████] 100%', 400],
-        ['cmd', 'guest@kawaiis.in:~# ./compile_life.sh --mode="gentle"', 150],
-        ['log', 'Loading memories: ...', 400],
-        ['cmd', 'guest@kawaiis.in:~# cat overview.md', 300]
+                    ["cmd", "guest@kawaiis.in:~# grep -R \"Lolin\" ./verse", 150],
+                    ["log", ">> A password changes, a trend fades, but a well-architected philosophy remains compile-ready.", 200],
+                    ["cmd", "guest@kawaiis.in:~# curl -s https://blog.kawaiis.in/api/lolin-verse | decrypt", 150],
+                    ["log", "[INFO] Decrypting \"小狐狸.sys\" [████████████████████] 100%", 300],
+                    ["cmd", "guest@kawaiis.in:~# ./compile_life.sh --mode=\"gentle\"", 150],
+                    ["log", "Loading memories: Chongqing steps, Shenzhen airport, hot showers...", 400],
+                    ["cmd", "guest@kawaiis.in:~# cat overview.md", 100],
+                    ["success", "EOF\nSystem rebooting... Status: SUCCESS.", 200]
                 ];
 
                 let currentLine = 0;
@@ -139,14 +133,8 @@ layout: default
                             const oldCursor = document.querySelector(".cursor");
                             if (oldCursor) oldCursor.remove();
                             
-                            // 动画结束，展现沙盒内部内容
-                            const box = document.getElementById("sandbox-content");
-                            box.style.display = "block";
-                            box.offsetHeight;
-                            box.classList.add("visible");
-
-                            // 通知父级：内容已挂载，请重新计算 iframe 高度
-                            window.parent.postMessage({type: "resize", height: document.body.scrollHeight}, "*");
+                            // 跑完后通知父页面：可以展开正文了
+                            window.parent.postMessage("terminal_done", "*");
                         }, 200);
                     }
                 }
@@ -161,23 +149,34 @@ layout: default
     const iframe = document.getElementById('terminal-iframe');
     const sourceContent = document.getElementById('jekyll-source-content');
 
-    // 关键核心：当 iframe 加载完毕，直接把外界渲染好的正文和音乐“剪切”进沙盒内部
+    // 1. 骨架一就绪，立刻把正文移植进沙盒（此时内部依旧是 opacity: 0，不露痕迹）
     iframe.addEventListener('load', () => {
         const iframeDoc = iframe.contentDocument || iframe.contentWindow.document;
         const sandboxTarget = iframeDoc.getElementById('sandbox-content');
         
         if (sandboxTarget && sourceContent) {
-            // 将包含有音乐组件和正文的 DOM 完整移入 iframe
             sandboxTarget.appendChild(sourceContent);
-            sourceContent.style.display = 'block'; // 恢复显示
+            sourceContent.style.display = 'block'; 
         }
     });
 
-    // 监听沙盒内传来的高度撑开信号
+    // 2. 收到结束信号后，精准计算高度并展开
     window.addEventListener("message", function(event) {
-        if (event.data && event.data.type === "resize") {
-            // 动态调整 iframe 高度，保证音乐和正文能够完全显示出来，不出现双滚动条
-            iframe.style.height = (event.data.height + 40) + "px";
+        if (event.data === "terminal_done") {
+            const iframeDoc = iframe.contentDocument || iframe.contentWindow.document;
+            const targetVisual = iframeDoc.getElementById('lolin-pure-content');
+            
+            if (targetVisual) {
+                // 先显示出来，以便让浏览器计算真实高度
+                targetVisual.style.opacity = "1";
+                targetVisual.style.transform = "translateY(0)";
+                
+                // 延迟 50 毫秒等待网易云外链等组件撑开 DOM，再计算最终高度
+                setTimeout(() => {
+                    const finalHeight = iframeDoc.body.scrollHeight;
+                    iframe.style.height = (finalHeight + 50) + "px";
+                }, 50);
+            }
         }
     });
 </script>
