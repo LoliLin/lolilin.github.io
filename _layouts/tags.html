@@ -3,49 +3,40 @@ layout: page
 /* All the Tags of posts with an interactive relations network graph. */
 ---
 
-<link rel="stylesheet" href="https://unpkg.com/vis-network/standalone/umd/vis-network.min.css" type="text/css" />
 <script type="text/javascript" src="https://unpkg.com/vis-network/standalone/umd/vis-network.min.js"></script>
 
 <style>
-  /* 容器样式，给云图一个有深度、科技感的背景 */
+  /* 严格控制容器本身的尺寸和样式，作为画布的物理围墙 */
   #tags-network-container {
     width: 100%;
-    height: 60vh; /* 高度占屏幕的60%，可根据需要调整 */
-    border-radius: 12px;
-    background: radial-gradient(circle, #ffffff 0%, #f1f5f9 100%);
-    box-shadow: inset 0 0 20px rgba(0,0,0,0.02);
+    height: 70vh;
+    border-radius: 16px;
+    background: radial-gradient(circle at center, #0f172a 0%, #020617 100%);
+    box-shadow: inset 0 0 40px rgba(0,0,0,0.6);
     position: relative;
     overflow: hidden;
   }
-  /* 移动端适配：稍微调大高度 */
-  @media (max-width: 768px) {
-    #tags-network-container {
-      height: 70vh;
-    }
-  }
   .graph-hint {
     font-size: 12px;
-    color: #94a3b8;
+    color: #64748b;
     text-align: center;
     margin-top: 8px;
   }
 </style>
 
-<div id="tags-network-container"></div>
-<div class="graph-hint">💡 提示：每个圆圈代表一个标签，圆圈越大文章越多。支持双指缩放、拖拽和点击。</div>
+<div id="tags-network-container" class="mx-xl-2"></div>
+<div class="graph-hint">✨ 星云画布支持拖拽与双指缩放。点击星云节点可穿越至对应标签页。</div>
 
 <script type="text/javascript">
   document.addEventListener("DOMContentLoaded", function() {
     
-    /* --- Step A: 从 Jekyll 动态生成原始数据 --- */
-    /* 提取所有标签及其包含的文章数量 */
+    /* --- Step A: 数据提取 --- */
     const tagCounts = {
       {% for t in site.tags %}
         "{{ t[0] }}": {{ t[1].size }}{% unless forloop.last %},{% endunless %}
       {% endfor %}
     };
 
-    /* 提取文章的标签组合，用于建立“连线” */
     const postTagsRelations = [
       {% for post in site.posts %}
         {% if post.tags.size > 1 %}
@@ -54,41 +45,78 @@ layout: page
       {% endfor %}
     ];
 
-    /* --- Step B: 构建 Vis.js 格式的节点 (Nodes) --- */
-    /* 这里的颜色采用了更具活力的渐变粉蓝、粉紫系，契合“可爱屋”的轻科技感 */
-    const colorPalette = ['#a7f3d0', '#bae6fd', '#c7d2fe', '#fbcfe8', '#fecdd3', '#fed7aa'];
-    let nodeIndex = 0;
-    
+    const connectedTags = new Set();
+    postTagsRelations.forEach(tags => {
+      tags.forEach(t => connectedTags.add(t));
+    });
+
+    /* --- Step B: 构建节点 --- */
+    const nebulaPalettes = [
+      { start: 'rgba(244, 63, 94, 0.8)', end: 'rgba(244, 63, 94, 0)' },
+      { start: 'rgba(14, 165, 233, 0.8)', end: 'rgba(14, 165, 233, 0)' },
+      { start: 'rgba(168, 85, 247, 0.8)', end: 'rgba(168, 85, 247, 0)' },
+      { start: 'rgba(234, 179, 8, 0.8)', end: 'rgba(234, 179, 8, 0)' },
+      { start: 'rgba(34, 197, 94, 0.8)', end: 'rgba(34, 197, 94, 0)' }
+    ];
+
+    let paletteIdx = 0;
     const nodesArray = Object.keys(tagCounts).map(tagName => {
       const count = tagCounts[tagName];
-      /* 根据文章数量动态调整节点大小 (基础大小 20 + 数量等比放大) */
-      const size = 20 + (count * 5); 
-      const randomColor = colorPalette[nodeIndex % colorPalette.length];
-      nodeIndex++;
+      const isSatellite = !connectedTags.has(tagName);
+      
+      const baseSize = 35 + (tagName.length * 4);
+      const radius = baseSize + (count * 3); 
+      
+      const palette = nebulaPalettes[paletteIdx % nebulaPalettes.length];
+      paletteIdx++;
+
+      const angle = Math.random() * Math.PI * 2;
+      const speed = 0.003 + Math.random() * 0.004; /* 稍微放慢旋转速度，更优雅 */
 
       return {
         id: tagName,
-        label: `${tagName}\n(${count})`,
-        size: size,
-        shape: 'dot',
-        font: { size: 14, color: '#334155', face: 'PingFang SC, system-ui' },
-        color: {
-          background: randomColor,
-          border: '#ffffff',
-          highlight: { background: '#38bdf8', border: '#bae6fd' }
+        label: tagName,
+        shape: 'customCanvas',
+        ctxRenderer: function ({ ctx, x, y, state: { selected, hover } }) {
+          ctx.save();
+          
+          /* 星云球体 */
+          const gradient = ctx.createRadialGradient(x, y, radius * 0.1, x, y, radius);
+          gradient.addColorStop(0, '#ffffff');
+          gradient.addColorStop(0.2, selected || hover ? '#38bdf8' : palette.start);
+          gradient.addColorStop(1, palette.end);
+          
+          ctx.beginPath();
+          ctx.arc(x, y, radius, 0, Math.PI * 2);
+          ctx.fillStyle = gradient;
+          ctx.fill();
+
+          /* 文字完美居中 */
+          ctx.fillStyle = '#ffffff';
+          ctx.font = `bold ${Math.max(12, radius * 0.26)}px PingFang SC, Microsoft YaHei, sans-serif`;
+          ctx.textAlign = 'center';
+          ctx.textBaseline = 'middle';
+          
+          ctx.shadowColor = 'rgba(0, 0, 0, 0.8)';
+          ctx.shadowBlur = 4;
+          
+          ctx.fillText(`${tagName} (${count})`, x, y);
+          ctx.restore();
         },
-        borderWidth: 2,
-        shadow: { enabled: true, color: 'rgba(0,0,0,0.05)', size: 4, x: 2, y: 2 }
+        value: radius,
+        radius: radius, /* 留存半径数据用于边界碰撞检测 */
+        isSatellite: isSatellite,
+        satAngle: angle,
+        satSpeed: speed,
+        satRadius: 150 + Math.random() * 80 
       };
     });
 
-    /* --- Step C: 构建连线 (Edges) --- */
-    /* 统计哪些标签经常在同一篇文章里出现 */
+    /* --- Step C: 构建连线 --- */
     const edgeMap = {};
     postTagsRelations.forEach(tags => {
       for (let i = 0; i < tags.length; i++) {
         for (let j = i + 1; j < tags.length; j++) {
-          /* 保证 key 的唯一性 (按字母排序组合) */
           const key = tags[i] < tags[j] ? `${tags[i]}_${tags[j]}` : `${tags[j]}_${tags[i]}`;
           edgeMap[key] = (edgeMap[key] || 0) + 1;
         }
@@ -97,18 +125,75 @@ layout: page
 
     const edgesArray = Object.keys(edgeMap).map(key => {
       const [from, to] = key.split('_');
-      const weight = edgeMap[key];
       return {
         from: from,
         to: to,
-        width: weight * 1.5, /* 共同出现次数越多，线越粗 */
-        color: { color: '#cbd5e1', highlight: '#38bdf8' },
-        smooth: { type: 'continuous' } /* 让连线平滑 */
+        width: edgeMap[key] * 2,
+        color: { color: 'rgba(255, 255, 255, 0.12)', highlight: '#38bdf8' },
+        smooth: { type: 'continuous' }
       };
     });
 
-    /* --- Step D: 渲染网络图 --- */
+    /* --- Step D: 物理引擎初始化 --- */
     const container = document.getElementById('tags-network-container');
+    const nodesDataSet = new vis.DataSet(nodesArray);
+    const data = { nodes: nodesDataSet, edges: new vis.DataSet(edgesArray) };
+    
+    const options = {
+      physics: {
+        forceAtlas2Based: {
+          gravitationalConstant: -40, /* 稍微减小排斥，防止把卫星推太远 */
+          centralGravity: 0.04,
+          springLength: 120,
+          springConstant: 0.08
+        },
+        solver: 'forceAtlas2Based',
+        stabilization: { iterations: 100 }
+      },
+      interaction: { hover: true, zoomView: true, dragView: true }
+    };
+
+         /* 自定义物理碰撞体积，防止重叠 */
+        scaling: { label: { enabled: false } },
+        value: radius,
+        /* 挂载卫星独有的旋转属性 */
+        isSatellite: isSatellite,
+        satAngle: angle,
+        satSpeed: speed,
+        satRadius: 180 + Math.random() * 100 /* 绕主星云运行的轨道半径 */
+      };
+    });
+
+    /* --- Step C: 构建连线 --- */
+    const edgeMap = {};
+    postTagsRelations.forEach(tags => {
+      for (let i = 0; i < tags.length; i++) {
+        for (let j = i + 1; j < tags.length; j++) {
+          const key = tags[i] < tags[j] ? `${tags[i]}_${tags[j]}` : `${tags[j]}_${tags[i]}`;
+          edgeMap[key] = (edgeMap[key] || 0) + 1;
+        }
+      }
+    });
+
+    const edgesArray = Object.keys(edgeMap).map(key => {
+      const [from, to] = key.split('_');
+      return {
+        from: from,
+        to: to,
+        width: edgeMap[key] * 2,
+        color: { color: 'rgba(255, 255, 255, 0.15)', highlight: '#38bdf8' },
+        smooth: { type: 'continuous' }
+      };
+    });
+
+    /* --- Step D: 配置物理引擎与边界控制 --- */
+    const container = document.getElementById('tags-network-container');
+    const nodesDataSet = new vis.DataSet(nodesArray);
+    const data = { nodes: nodesDataSet, edges: new vis.DataSet(edgesArray) };
+    
+    const options = {
+      physics: {
+        forceAtlas2    const container = document.getElementById('tags-network-container');
     const data = {
       nodes: new vis.DataSet(nodesArray),
       edges: new vis.DataSet(edgesArray)
