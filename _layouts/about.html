@@ -103,103 +103,82 @@ layout: default
 </article>
 
 <script>
-(function(){
-  // 终端动画核心
-  function runTerminal(){
-    const tb = document.getElementById('terminal-body');
-    const mc = document.getElementById('main-content');
-    const tf = document.getElementById('terminal');
+(function() {
+    function initTerminal() {
+        const terminalBody = document.getElementById('terminal-body');
+        const mainContent = document.getElementById('main-content');
+        const terminal = document.getElementById('terminal');
 
-    // 元素还没出来？50ms 后重试（最多等 5 秒）
-    if(!tb || !mc){
-      if(window.__terminalRetries === undefined) window.__terminalRetries = 0;
-      if(window.__terminalRetries < 100){
-        window.__terminalRetries++;
-        setTimeout(runTerminal, 50);
-      }
-      return;
+        if (!terminalBody || !mainContent) return false;
+
+        const script = [
+            ["cmd", "guest@kawaiis.in:~# grep -R \"Lolin\" ./verse", 400],
+            ["log", ">> A password changes, a trend fades, but a well-architected philosophy remains compile-ready.", 200],
+            ["cmd", "guest@kawaiis.in:~# curl -s https://blog.kawaiis.in/api/lolin-verse | decrypt", 250],
+            ["log", "[INFO] Decrypting \"小狐狸.sys\" [████████████████████] 100%", 400],
+            ["cmd", "guest@kawaiis.in:~# ./compile_life.sh --mode=\"gentle\"", 150],
+            ["log", "Loading memories: ...", 400],
+            ["cmd", "guest@kawaiis.in:~# cat overview.md", 300]
+        ];
+
+        let currentLine = 0;
+
+        function createLine(type, text) {
+            const lineDiv = document.createElement('div');
+            lineDiv.className = 'line';
+            // 直接用内联样式确保颜色
+            lineDiv.style.color = '#c9d1d9';
+            if (type === 'cmd') {
+                lineDiv.innerHTML = '<span class="command" style="color:#58a6ff">' + text + '</span>';
+            } else if (type === 'success') {
+                lineDiv.innerHTML = '<span class="success" style="color:#39ff14">' + text + '</span>';
+            } else {
+                lineDiv.textContent = text;
+            }
+            return lineDiv;
+        }
+
+        function runScript() {
+            if (currentLine < script.length) {
+                const [type, text, delay] = script[currentLine];
+                const oldCursor = document.querySelector('.cursor');
+                if (oldCursor) oldCursor.remove();
+
+                const lineElement = createLine(type, text);
+                const cursor = document.createElement('span');
+                cursor.className = 'cursor';
+                cursor.style.display = 'inline-block';
+                cursor.style.width = '8px';
+                cursor.style.height = '18px';
+                cursor.style.backgroundColor = '#39ff14';
+                lineElement.appendChild(cursor);
+
+                terminalBody.appendChild(lineElement);
+                terminal.scrollTop = terminal.scrollHeight;
+
+                currentLine++;
+                setTimeout(runScript, delay);
+            } else {
+                setTimeout(function() {
+                    const oldCursor = terminalBody.querySelector('.cursor');
+                    if (oldCursor) oldCursor.remove();
+                    mainContent.classList.add('visible');
+                }, 200);
+            }
+        }
+
+        runScript();
+        return true;
     }
 
-    // 防止重复运行
-    if(window.__terminalRan) return;
-    window.__terminalRan = true;
-
-    const script = [
-      ["cmd", "guest@kawaiis.in:~# grep -R \"Lolin\" ./verse", 400],
-      ["log", ">> A password changes, a trend fades, but a well-architected philosophy remains compile-ready.", 200],
-      ["cmd", "guest@kawaiis.in:~# curl -s https://blog.kawaiis.in/api/lolin-verse | decrypt", 250],
-      ["log", "[INFO] Decrypting \"小狐狸.sys\" [████████████████████] 100%", 400],
-      ["cmd", "guest@kawaiis.in:~# ./compile_life.sh --mode=\"gentle\"", 150],
-      ["log", "Loading memories: ...", 400],
-      ["cmd", "guest@kawaiis.in:~# cat 关乎此间.md", 300]
-    ];
-
-    let currentLine = 0;
-
-    function createLine(type, text){
-      const lineDiv = document.createElement('div');
-      lineDiv.className = 'line';
-      lineDiv.style.color = '#c9d1d9';
-      lineDiv.style.fontFamily = '"Courier New", Courier, monospace';
-      if(type === 'cmd'){
-        lineDiv.innerHTML = '<span class="command" style="color:#58a6ff">' + text + '</span>';
-      } else if(type === 'success'){
-        lineDiv.innerHTML = '<span class="success" style="color:#39ff14">' + text + '</span>';
-      } else {
-        lineDiv.textContent = text;
-      }
-      return lineDiv;
+    // 确保在 DOM 和 CSS 完全就绪后启动
+    if (document.readyState === 'complete' || document.readyState === 'interactive') {
+        // 稍作延迟，等待主题可能的动态渲染完成
+        setTimeout(function() { initTerminal(); }, 50);
+    } else {
+        document.addEventListener('DOMContentLoaded', function() {
+            setTimeout(initTerminal, 50);
+        });
     }
-
-    function tick(){
-      if(currentLine >= script.length){
-        setTimeout(() => {
-          const oldCursor = tb.querySelector('.cursor');
-          if(oldCursor) oldCursor.remove();
-          mc.classList.add('visible');
-        }, 200);
-        return;
-      }
-
-      const [type, text, delay] = script[currentLine];
-      const oldCursor = document.querySelector('.cursor');
-      if(oldCursor) oldCursor.remove();
-
-      const line = createLine(type, text);
-      const cursor = document.createElement('span');
-      cursor.className = 'cursor';
-      cursor.style.display = 'inline-block';
-      cursor.style.width = '8px';
-      cursor.style.height = '18px';
-      cursor.style.backgroundColor = '#39ff14';
-      cursor.style.animation = 'blink 1s infinite';
-      line.appendChild(cursor);
-
-      tb.appendChild(line);
-      if(tf) tf.scrollTop = tf.scrollHeight;
-      currentLine++;
-      setTimeout(tick, delay);
-    }
-
-    tick();
-
-    // 顺便修复音乐播放器 iframe 的错误 src
-    const musicFlow = document.getElementById('netease-cloud-music-flow');
-    if(musicFlow){
-      const iframe = musicFlow.querySelector('iframe');
-      if(iframe){
-        iframe.src = 'https://music.163.com/outchain/player?type=3&id=2519213563&auto=1&height=66';
-        iframe.removeAttribute(',');
-        iframe.setAttribute('allow','autoplay; encrypted-media');
-      }
-    }
-  }
-
-  // 立刻执行（若页面已完成加载则直接运行，否则等待）
-  if(document.readyState === 'loading'){
-    document.addEventListener('DOMContentLoaded', runTerminal);
-  } else {
-    runTerminal();
-  }
 })();
 </script>
