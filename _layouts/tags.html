@@ -9,15 +9,20 @@ layout: page
 <script type="text/javascript" src="https://unpkg.com/vis-network/standalone/umd/vis-network.min.js"></script>
 
 <style>
-  /* 容器样式：深色星空渐变背景，完美衬托发光的渐变星云 */
+  /* 容器样式：星空深蓝渐变 */
   #tags-network-container {
     width: 100%;
-    height: 70vh; /* 稍微拉大高度给卫星预留公转轨道空间 */
+    height: 65vh;
     border-radius: 16px;
     background: radial-gradient(circle at center, #0f172a 0%, #020617 100%);
-    box-shadow: inset 0 0 40px rgba(0,0,0,0.6);
+    box-shadow: inset 0 0 30px rgba(0,0,0,0.7);
     position: relative;
     overflow: hidden;
+  }
+  @media (max-width: 768px) {
+    #tags-network-container {
+      height: 70vh;
+    }
   }
   .graph-hint {
     font-size: 12px;
@@ -29,7 +34,7 @@ layout: page
 </style>
 
 <div id="tags-network-container"></div>
-<div class="graph-hint">✨ 星云画布支持拖拽与缩放。点击星云节点可穿越至对应标签页。</div>
+<div class="graph-hint">✨ 赛博星云图：支持双指缩放与拖拽。点击节点即可穿越。</div>
 
 <script type="text/javascript">
   document.addEventListener("DOMContentLoaded", function() {
@@ -49,66 +54,113 @@ layout: page
       {% endfor %}
     ];
 
-    /* 找出哪些 tag 拥有连线，没有连线的即为孤立卫星 */
+    /* 筛出有连线的标签 */
     const connectedTags = new Set();
     postTagsRelations.forEach(tags => {
       tags.forEach(t => connectedTags.add(t));
     });
 
-    /* --- Step B: 构建 Vis.js 格式的节点 (Canvas 自定义星云) --- */
-    /* 精选 5 组赛博星云渐变色盘 (起点亮色, 边缘半透明色) */
-    const nebulaPalettes = [
-      { start: 'rgba(244, 63, 94, 0.85)', end: 'rgba(244, 63, 94, 0)' },   /* 玫瑰粉红 */
-      { start: 'rgba(14, 165, 233, 0.85)', end: 'rgba(14, 165, 233, 0)' },  /* 天空蓝 */
-      { start: 'rgba(168, 85, 247, 0.85)', end: 'rgba(168, 85, 247, 0)' },  /* 幻境紫 */
-      { start: 'rgba(234, 179, 8, 0.85)', end: 'rgba(234, 179, 8, 0)' },    /* 琥珀金 */
-      { start: 'rgba(34, 197, 94, 0.85)', end: 'rgba(34, 197, 94, 0)' }     /* 荧光绿 */
+    /* --- Step B: 构建节点 (使用内置 ellipse 完美的将字包裹在球内) --- */
+    /* 采用高饱和、带呼吸感的霓虹配色 */
+    const neonColors = [
+      { bg: '#f43f5e', border: '#fda4af', hover: '#ffe4e6' }, /* 妖艳粉 */
+      { bg: '#0ea5e9', border: '#7dd3fc', hover: '#e0f2fe' }, /* 科技蓝 */
+      { bg: '#a855f7', border: '#c084fc', hover: '#f3e8ff' }, /* 幻境紫 */
+      { bg: '#eab308', border: '#fef08a', hover: '#fef9c3' }, /* 琥珀金 */
+      { bg: '#22c55e', border: '#86efac', hover: '#dcfce7' }  /* 荧光绿 */
     ];
 
-    let paletteIdx = 0;
+    let colorIdx = 0;
     const nodesArray = Object.keys(tagCounts).map(tagName => {
       const count = tagCounts[tagName];
       const isSatellite = !connectedTags.has(tagName);
-      
-      /* 根据中文字数动态决定基础半径，确保字绝对在球体内部 */
-      const baseSize = 35 + (tagName.length * 4);
-      const radius = baseSize + (count * 2.5); 
-      
-      const palette = nebulaPalettes[paletteIdx % nebulaPalettes.length];
-      paletteIdx++;
+      const color = neonColors[colorIdx % neonColors.length];
+      colorIdx++;
 
       return {
         id: tagName,
-        label: tagName,
-        shape: 'customCanvas',
-        /* 使用自定义 Canvas 2D 渲染器 */
-        ctxRenderer: function ({ ctx, x, y, state: { selected, hover } }) {
-          ctx.save();
-          
-          /* 1. 绘制发光星云球体 */
-          const gradient = ctx.createRadialGradient(x, y, radius * 0.1, x, y, radius);
-          gradient.addColorStop(0, '#ffffff'); /* 中心亮核 */
-          gradient.addColorStop(0.25, selected || hover ? '#38bdf8' : palette.start);
-          gradient.addColorStop(1, palette.end); /* 向外扩散隐形 */
-          
-          ctx.beginPath();
-          ctx.arc(x, y, radius, 0, Math.PI * 2);
-          ctx.fillStyle = gradient;
-          ctx.fill();
-
-          /* 2. 文字完美吃进球体正中心 (完美兼容中英文) */
-          ctx.fillStyle = '#ffffff';
-          ctx.font = `bold ${Math.max(11, radius * 0.24)}px PingFang SC, Microsoft YaHei, sans-serif`;
-          ctx.textAlign = 'center';
-          ctx.textBaseline = 'middle';
-          
-          /* 加一层文字暗阴影，防止亮色背景下看不清字 */
-          ctx.shadowColor = 'rgba(0, 0, 0, 0.9)';
-          ctx.shadowBlur = 4;
-          
-          ctx.fillText(`${tagName} (${count})`, x, y);
-          ctx.restore();
+        /* 标签名字和数量直接写在一起 */
+        label: `${tagName} (${count})`,
+        /* 使用官方内置形状 ellipse，字天然在球体内部，且完美兼容中文字符 */
+        shape: 'ellipse',
+        /* 根据文章数量等比缩放字号，形状会自动同步等比变大 */
+        font: { 
+          size: 13 + (count * 2), 
+          color: '#ffffff', 
+          face: 'PingFang SC, Microsoft YaHei, sans-serif',
+          bold: true
         },
+        color: {
+          background: color.bg,
+          border: color.border,
+          highlight: { background: '#38bdf8', border: '#ffffff' },
+          hover: { background: color.bg, border: color.hover }
+        },
+        borderWidth: 2,
+        /* 开启官方内置的光影阴影效果，制造悬浮星空感 */
+        shadow: {
+          enabled: true,
+          color: 'rgba(0, 0, 0, 0.6)',
+          size: 10,
+          x: 0,
+          y: 4
+        },
+        /* 挂载卫星公转属性 */
+        isSatellite: isSatellite,
+        satAngle: Math.random() * Math.PI * 2,
+        satSpeed: 0.002 + Math.random() * 0.003,
+        satRadius: 140 + Math.random() * 50
+      };
+    });
+
+    /* --- Step C: 构建连线 (Edges) --- */
+    const edgeMap = {};
+    postTagsRelations.forEach(tags => {
+      for (let i = 0; i < tags.length; i++) {
+        for (let j = i + 1; j < tags.length; j++) {
+          const key = tags[i] < tags[j] ? `${tags[i]}_${tags[j]}` : `${tags[j]}_${tags[i]}`;
+          edgeMap[key] = (edgeMap[key] || 0) + 1;
+        }
+      }
+    });
+
+    const edgesArray = Object.keys(edgeMap).map(key => {
+      const [from, to] = key.split('_');
+      return {
+        from: from,
+        to: to,
+        width: edgeMap[key] * 2,
+        /* 半透明发光白线 */
+        color: { color: 'rgba(255, 255, 255, 0.15)', highlight: '#38bdf8', hover: 'rgba(255, 255, 255, 0.4)' },
+        smooth: { type: 'continuous' },
+        shadow: { enabled: true, color: 'rgba(0,0,0,0.3)', size: 3 }
+      };
+    });
+
+    /* --- Step D: 官方物理引擎与交互配置 --- */
+    const container = document.getElementById('tags-network-container');
+    const nodesDataSet = new vis.DataSet(nodesArray);
+    const data = {
+      nodes: nodesDataSet,
+      edges: new vis.DataSet(edgesArray)
+    };
+    
+    const options = {
+      nodes: {
+        margin: { top: 12, bottom: 12, left: 16, right: 16 } /* 给文字球内部留点呼吸边距 */
+      },
+      physics: {
+        forceAtlas2Based: {
+          gravitationalConstant: -40,
+          centralGravity: 0.05, /* 中心引力控场，锁死边界 */
+          springLength: 110,
+          springConstant: 0.07
+        },
+        solver: 'forceAtlas2Based',
+        stabilization: { enabled: true, iterations: 120 }
+      },
+      interaction: {
+        hover        },
         value: radius,
         isSatellite: isSatellite,
         /* 给卫星自定义轨道公转参数 */
