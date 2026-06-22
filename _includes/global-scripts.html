@@ -2,28 +2,23 @@
 
 <script>
 (function() {
-  // $$$ ripple script
-  // 创建容器
+  /* $$$ ripple script
+ */
   var container = document.createElement('div');
   container.className = 'ripple-container';
   document.body.appendChild(container);
-  // 限制同时存在的波纹数量，防止性能问题
   var MAX_RIPPLES = 8;
   var activeRipples = 0;
   document.addEventListener('click', function(e) {
-    // 忽略交互元素上的点击（按钮、链接、输入框），避免遮挡体验
     var tag = e.target.tagName;
     if (tag === 'BUTTON' || tag === 'A' || tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') return;
-    // 忽略有 btn 类或 role="button" 的元素
     if (e.target.closest('.btn, [role="button"], .card-wrapper')) return;
-    // 清理过多的旧波纹
     if (activeRipples >= MAX_RIPPLES) {
       var old = container.querySelector('.ripple-dot');
       if (old) { old.remove(); activeRipples--; }
     }
     var dot = document.createElement('span');
     dot.className = 'ripple-dot';
-    // 随机大小 30~80px
     var size = 30 + Math.random() * 50;
     dot.style.width = size + 'px';
     dot.style.height = size + 'px';
@@ -31,7 +26,6 @@
     dot.style.top = e.clientY + 'px';
     container.appendChild(dot);
     activeRipples++;
-    // 动画结束后自动移除
     dot.addEventListener('animationend', function() {
       dot.remove();
       activeRipples--;
@@ -41,15 +35,13 @@
 </script>
 
 <script>
-// 定义转换函数类型：接收原始 HTML 字符串，返回修改后的 HTML 字符串
+/* 定义转换函数类型：接收原始 HTML 字符串，返回修改后的 HTML 字符串 */
 class TransformedIframe extends HTMLElement {
   static observedAttributes = ['src', 'function'];
 
   constructor() {
     super();
-    // 创建 shadow DOM 可避免组件内部样式泄漏，但不是必须的（也可直接操作 innerHTML）
     this.attachShadow({ mode: 'open' });
-    // 只需要一个 iframe 元素用于渲染最终内容
     this.iframe = document.createElement('iframe');
     this.iframe.style.width = '100%';
     this.iframe.style.height = '100%';
@@ -58,20 +50,20 @@ class TransformedIframe extends HTMLElement {
 
     this.currentSrc = null;
     this.abortController = null;
-    this._customTransformFn = null;      // 用户直接赋值的函数
-    this._attrTransformFn = null;        // 从 function 属性解析的全局函数
+    this._customTransformFn = null;      
+    this._attrTransformFn = null;        
   }
 
-  // 获取当前生效的转换函数
+
   get transformFn() {
     return this._customTransformFn ?? this._attrTransformFn;
   }
 
-  // 设置转换函数（优先级高于 function 属性）
+
   set transformFn(fn) {
     if (typeof fn === 'function') {
       this._customTransformFn = fn;
-      this._attrTransformFn = null;   // 清除属性来源的函数
+      this._attrTransformFn = null; 
     } else {
       this._customTransformFn = null;
       this._resolveFunctionFromAttribute();
@@ -79,7 +71,7 @@ class TransformedIframe extends HTMLElement {
     this.loadContent();
   }
 
-  // 从 'function' 属性解析全局函数
+
   _resolveFunctionFromAttribute() {
     const funcName = this.getAttribute('function');
     if (funcName && typeof window[funcName] === 'function') {
@@ -104,7 +96,7 @@ class TransformedIframe extends HTMLElement {
     }
   }
 
-  // 取消正在进行的请求
+
   _abortPendingFetch() {
     if (this.abortController) {
       this.abortController.abort();
@@ -112,7 +104,7 @@ class TransformedIframe extends HTMLElement {
     }
   }
 
-  // 核心加载 + 转换逻辑
+
   async loadContent() {
     const src = this.getAttribute('src');
     if (!src) {
@@ -144,7 +136,6 @@ class TransformedIframe extends HTMLElement {
     } catch (err) {
       if (err.name !== 'AbortError') {
         console.error('加载失败:', err);
-        // 可选：显示错误信息在 iframe 中
         this.iframe.srcdoc = `<div style="color:red;padding:1rem;">加载失败: ${err.message}</div>`;
       }
     } finally {
@@ -152,7 +143,7 @@ class TransformedIframe extends HTMLElement {
     }
   }
 
-  // 手动刷新
+
   reload() {
     this.loadContent();
   }
@@ -162,6 +153,5 @@ class TransformedIframe extends HTMLElement {
   }
 }
 
-// 注册自定义元素（必须带连字符）
 customElements.define('transformed-iframe', TransformedIframe);
 </script>
