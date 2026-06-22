@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>关乎此间 | Lolin Verse</title>
+    <style>
+        :root {
+            --bg-color: #0d1117;
+            --text-color: #c9d1d9;
+            --accent-color: #58a6ff;
+            --terminal-green: #39ff14;
+            --border-color: #30363d;
+            --quote-bg: #161b22;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+            line-height: 1.6;
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            min-height: 100vh;
+            box-sizing: border-box;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 800px;
+        }
+
+        .terminal {
+            background-color: #05070a;
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            padding: 20px;
+            font-family: "Courier New", Courier, monospace;
+            color: #f0f6fc;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            margin-bottom: 30px;
+        }
+
+        .terminal-header {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 15px;
+            border-bottom: 1px solid var(--border-color);
+            padding-bottom: 10px;
+        }
+
+        .dot { width: 12px; height: 12px; border-radius: 50%; }
+        .dot-red { background-color: #ff5f56; }
+        .dot-yellow { background-color: #ffbd2e; }
+        .dot-green { background-color: #27c93f; }
+
+        .line { margin: 3px 0; white-space: pre-wrap; word-break: break-all; }
+        .command { color: var(--accent-color); }
+        .success { color: var(--terminal-green); }
+
+        .cursor {
+            display: inline-block;
+            width: 8px;
+            height: 18px;
+            background-color: var(--terminal-green);
+            animation: blink 1s infinite;
+            vertical-align: middle;
+            margin-left: 4px;
+        }
+
+        @keyframes blink { 0%, 49% { opacity: 1; } 50%, 100% { opacity: 0; } }
+
+        /* 正文平滑切入 */
+        #main-content {
+            opacity: 0;
+            transform: translateY(10px);
+            transition: opacity 0.6s cubic-bezier(0.16, 1, 0.3, 1), transform 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+            display: none;
+        }
+
+        #main-content.visible {
+            display: block;
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        h1, h2, h3 { color: #ffffff; border-bottom: 1px solid var(--border-color); padding-bottom: 5px; }
+        h1 { font-size: 2rem; }
+        h2 { font-size: 1.5rem; margin-top: 30px; }
+        a { color: var(--accent-color); text-decoration: none; }
+        a:hover { text-decoration: underline; }
+        blockquote {
+            background-color: var(--quote-bg);
+            border-left: 4px solid var(--accent-color);
+            margin: 20px 0;
+            padding: 15px;
+            font-style: italic;
+            border-radius: 0 4px 4px 0;
+        }
+        pre code { display: block; padding: 15px; overflow-x: auto; background-color: #161b22; border: 1px solid var(--border-color); }
+        ul { padding-left: 20px; }
+        li { margin-bottom: 10px; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div class="terminal" id="terminal">
+        <div class="terminal-header">
+            <div class="dot dot-red"></div>
+            <div class="dot dot-yellow"></div>
+            <div class="dot dot-green"></div>
+            <span style="margin-left: 10px; font-size: 12px; color: #8b949e;">bash — blog.kawaiis.in</span>
+        </div>
+        <div id="terminal-body"></div>
+    </div>
+
+    <article id="main-content">
+        <blockquote>
+            “不见其发端，也不见其终极。我们只是在螺旋的中间，温柔又顽强地编译着自己。”
+        </blockquote>
+
+        <p>欢迎来到这个坐标。这里是 <code>blog.kawaiis.in</code> 的核心节点。</p>
+        <p>很高兴你能点进这个页面。当音乐在这个页面的角落缓缓流淌出来的时候，不管你是通过哪个奇奇怪怪的链接，视奸，希望接下来的文字能够帮你完整地拼凑出一个运行在现实与数字视界交界处的个体。</p>
+
+        <h2>洛铃</h2>
+        <p>这里是 Lolin Verse，或者说，洛铃。一个 153cm 的小狐狸，在这个螺旋般的世界里晃荡着，寻找着那些软软的、闪闪的、值得抱抱的东西。欢迎来到<strong>可愛屋</strong>。可爱屋就是可爱屋，取自《加查-可爱屋》，最初，洛铃在这里，构造自己的形象。于是就有了可爱屋，筑起来的小小窝巢，装满了碎碎念、旅行记录、医疗碎屑、代码片段，还有无数想要贴贴的瞬间。</p>
+        <p>经常说“没诗硬吟”来着，却又忍不住把生活写成一首散文诗。平时我是一个可爱赞美者，看到软乎乎的东西就会眼睛发亮，忍不住说“可爱~”。也是一位世界探索者，喜欢旅行、观察人类、记录那些转瞬即逝的瞬间。这里没有严格的分类，因为生活本身就是混沌而可爱的螺旋。我们不追求完美，只追求真实和温柔。</p>
+
+        <h2>洛铃的兴趣与探索</h2>
+        <ul>
+            <li><strong>可爱：</strong>这是最高原则！看到鲨鲨玩偶、软软的衣服、雾气蒙蒙的眼镜，都会心动。</li>
+            <li><strong>旅行：</strong>收拾行囊、坐飞机、推轮椅、找出口……每一次移动都是新的冒险。洛铃喜欢旅行，是2025年6月炎热的夏天和2026年1月寒冷的冬天。是提着行李箱在重庆的台阶上上下下，一种寻找"家"的过程。想要一个温暖、柔软、可以洗热水澡的地方。</li>
+            <li><strong>技术：</strong>喜欢把复杂的东西变得可用，花费了大量的时间在编辑器与终端之间。
+<pre><code>[Feature] ────────> [Staging] ────────> [Production]
+   │                     ▲
+   └─ (CI/CD Pipeline) ──┘  "Keep it linear, keep it clean."</code></pre>
+            </li>
+            <li><strong>观察人类：</strong>我喜欢发现别人，也发现自己。社交有时笨拙，但内心总是温柔的。</li>
+            <li><strong>吃：</strong>可乐，咖啡，啤酒。火鸡面，鸡肉卷，火锅，awa</li>
+            <li><strong>不通乐理，也无碍：</strong>洛铃不通音律。吹笛子只是"一味地吹"，从 do 到 do，再无更多天赋。但音乐能让洛铃舒服。越发觉得 <a href="https://msarina.siacone.art/" target="_blank">Baker</a> 可爱。</li>
+            <li><strong>加密市场与去中心化：</strong>从量化交易到链上治理，从智能合约到去中心化协议——规则即架构，架构即权力。
+                <blockquote>“虽然上了两倍杠杆的损失依旧不小，已经可以住一晚酒店了……”</blockquote>
+            </li>
+        </ul>
+
+        <h2>关于本站 blog.kawaiis.in</h2>
+        <p>这个博客是我在广袤互联网上给自己圈出的一块“自留地”。</p>
+        <h3>为什么选择 .in 域名？</h3>
+        <p><code>.in</code> 既代表了域名本身的灵动，也可以被解读为 <strong>Input（输入）</strong>、<strong>Insight（洞察）</strong> 或者 <strong>Infinity（无限）</strong>。谁能想到 in 这个词居然是印度。。。</p>
+
+        <h2>互联节点</h2>
+        <ul>
+            <li><a href="https://rle.wiki/" target="_blank">RLE wiki</a></li>
+            <li><a href="https://bghtnya.github.io/TransFlag_Avatar_Tool/" target="_blank">TransFlag_Avatar_Tool</a></li>
+        </ul>
+
+        <blockquote>
+            " 就算这世界是一个巨大的螺旋，我们也可以选择在其中温柔地编译自己。 "
+        </blockquote>
+    </article>
+</div>
+
+<script>
+    const terminalBody = document.getElementById('terminal-body');
+    const mainContent = document.getElementById('main-content');
+    const terminal = document.getElementById('terminal');
+
+    // 高速执行剧本：大幅缩减延迟
+    const script = [
+        ['cmd', 'guest@kawaiis.in:~# grep -R "Lolin" ./verse', 400],
+        ['log', '>> A password changes, a trend fades, but a well-architected philosophy remains compile-ready.', 200],
+        ['cmd', 'guest@kawaiis.in:~# curl -s https://blog.kawaiis.in/api/lolin-verse | decrypt', 250],
+        ['log', '[INFO] Decrypting "小狐狸.sys" [████████████████████] 100%', 400],
+        ['cmd', 'guest@kawaiis.in:~# ./compile_life.sh --mode="gentle"', 150],
+        ['log', 'Loading memories: ...', 400],
+        ['cmd', 'guest@kawaiis.in:~# cat overview.md', 300]
+    ];
+
+    let currentLine = 0;
+
+    function createLine(type, text) {
+        const lineDiv = document.createElement('div');
+        lineDiv.className = 'line';
+        if (type === 'cmd') {
+            lineDiv.innerHTML = `<span class="command">${text}</span>`;
+        } else if (type === 'success') {
+            lineDiv.innerHTML = `<span class="success">${text}</span>`;
+        } else {
+            lineDiv.textContent = text;
+        }
+        return lineDiv;
+    }
+
+    function runScript() {
+        if (currentLine < script.length) {
+            const [type, text, delay] = script[currentLine];
+            
+            const oldCursor = document.querySelector('.cursor');
+            if (oldCursor) oldCursor.remove();
+
+            const lineElement = createLine(type, text);
+            
+            const cursor = document.createElement('span');
+            cursor.className = 'cursor';
+            lineElement.appendChild(cursor);
+            
+            terminalBody.appendChild(lineElement);
+            terminal.scrollTop = terminal.scrollHeight;
+            
+            currentLine++;
+            setTimeout(runScript, delay);
+        } else {
+            // 结束时平滑但快速地切入正文
+            setTimeout(() => {
+                const oldCursor = document.querySelector('.cursor');
+                if (oldCursor) oldCursor.remove();
+                
+                mainContent.style.display = 'block';
+                mainContent.offsetHeight; 
+                mainContent.classList.add('visible');
+            }, 200);
+        }
+    }
+
+    window.onload = () => {
+        setTimeout(runScript, 100);
+    };
+</script>
+
+</body>
+</html>
