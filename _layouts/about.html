@@ -11,43 +11,43 @@ layout: default
         margin: 0 auto;
     }
 
-    /* 完美的沙盒隔离，隐藏边框 */
+    /* 初始高度给终端大小，后面动态撑开 */
     #terminal-iframe {
         width: 100%;
-        height: 240px; /* 预留足够高度给动画 */
+        height: 240px; 
         border: none;
         background: transparent;
         display: block;
-        margin-bottom: 20px;
+        transition: height 0.4s ease; /* 撑开高度时有平滑过渡 */
     }
 
-    /* 初始隐藏正文与音乐 */
-    #main-content {
-        opacity: 0;
-        transform: translateY(10px);
-        transition: opacity 0.6s cubic-bezier(0.16, 1, 0.3, 1), transform 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+    /* 这里的原始容器只负责给 Jekyll 渲染，渲染完后会被 JS 移走，所以设为 display: none */
+    #jekyll-source-content {
         display: none;
-    }
-
-    #main-content.visible {
-        display: block;
-        opacity: 1;
-        transform: translateY(0);
-    }
-    
-    .music-player {
-        margin-top: 30px;
     }
 </style>
 
 <div class="about-wrapper">
-    <!-- 利用 srcdoc 将整个终端沙盒打包塞进 iframe，不受任何外部主题干扰 -->
+    <div id="jekyll-source-content">
+        <article class="px-1">
+            {% assign title = page.title %}
+            <h1 class="dynamic-title">{{ title }}</h1>
+            <div class="content" style="text-autospace: ideograph-alpha ideograph-numeric ideograph-parenthesis;">
+                {{ content }}
+            </div>
+        </article>
+
+        <div class="music-player">
+            {% include music-set.html %}
+        </div>
+    </div>
+
     <iframe id="terminal-iframe" srcdoc='
         <!DOCTYPE html>
         <html>
         <head>
             <style>
-                body { margin: 0; background: transparent; overflow: hidden; }
+                body { margin: 0; background: transparent; font-family: -apple-system, BlinkMacSystemFont, sans-serif; color: #c9d1d9; line-height: 1.6; }
                 .terminal {
                     background-color: #05070a;
                     border: 1px solid #30363d;
@@ -58,6 +58,7 @@ layout: default
                     box-shadow: 0 10px 30px rgba(0,0,0,0.5);
                     box-sizing: border-box;
                     height: 220px;
+                    margin-bottom: 20px;
                 }
                 .terminal-header { display: flex; gap: 8px; margin-bottom: 15px; border-bottom: 1px solid #30363d; padding-bottom: 10px; }
                 .dot { width: 12px; height: 12px; border-radius: 50%; }
@@ -69,6 +70,23 @@ layout: default
                 .success { color: #39ff14; }
                 .cursor { display: inline-block; width: 8px; height: 18px; background-color: #39ff14; animation: blink 1s infinite; vertical-align: middle; margin-left: 4px; }
                 @keyframes blink { 0%, 49% { opacity: 1; } 50%, 100% { opacity: 0; } }
+
+                /* 沙盒内的正文容器，动画完结后展现 */
+                #sandbox-content {
+                    opacity: 0;
+                    transform: translateY(10px);
+                    transition: opacity 0.6s cubic-bezier(0.16, 1, 0.3, 1), transform 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+                    display: none;
+                }
+                #sandbox-content.visible {
+                    display: block;
+                    opacity: 1;
+                    transform: translateY(0);
+                }
+                /* 继承或微调 Jekyll 原文在暗色下的基础样式 */
+                h1, h2, h3 { color: #ffffff; }
+                a { color: #58a6ff; text-decoration: none; }
+                a:hover { text-decoration: underline; }
             </style>
         </head>
         <body>
@@ -81,6 +99,8 @@ layout: default
                 </div>
                 <div id="terminal-body"></div>
             </div>
+
+            <div id="sandbox-content"></div>
 
             <script>
                 const terminalBody = document.getElementById("terminal-body");
@@ -118,8 +138,15 @@ layout: default
                         setTimeout(() => {
                             const oldCursor = document.querySelector(".cursor");
                             if (oldCursor) oldCursor.remove();
-                            // 关键：跑完后向父页面发送信号
-                            window.parent.postMessage("terminal_animation_complete", "*");
+                            
+                            // 动画结束，展现沙盒内部内容
+                            const box = document.getElementById("sandbox-content");
+                            box.style.display = "block";
+                            box.offsetHeight;
+                            box.classList.add("visible");
+
+                            // 通知父级：内容已挂载，请重新计算 iframe 高度
+                            window.parent.postMessage({type: "resize", height: document.body.scrollHeight}, "*");
                         }, 200);
                     }
                 }
@@ -128,35 +155,29 @@ layout: default
         </body>
         </html>
     '></iframe>
-
-    <!-- 包装容器：收到 iframe 信号后同时展现 -->
-    <div id="main-content">
-        <article class="px-1">
-            {% assign title = page.title %}
-            <h1 class="dynamic-title">
-                {{ title }}
-            </h1>
-            <div class="content" style="text-autospace: ideograph-alpha ideograph-numeric ideograph-parenthesis;">
-                {{ content }}
-            </div>
-        </article>
-
-        <div class="music-player">
-            {% include music-set.html %}
-        </div>
-    </div>
 </div>
 
 <script>
-    // 监听来自 iframe 沙盒的结束信号
+    const iframe = document.getElementById('terminal-iframe');
+    const sourceContent = document.getElementById('jekyll-source-content');
+
+    // 关键核心：当 iframe 加载完毕，直接把外界渲染好的正文和音乐“剪切”进沙盒内部
+    iframe.addEventListener('load', () => {
+        const iframeDoc = iframe.contentDocument || iframe.contentWindow.document;
+        const sandboxTarget = iframeDoc.getElementById('sandbox-content');
+        
+        if (sandboxTarget && sourceContent) {
+            // 将包含有音乐组件和正文的 DOM 完整移入 iframe
+            sandboxTarget.appendChild(sourceContent);
+            sourceContent.style.display = 'block'; // 恢复显示
+        }
+    });
+
+    // 监听沙盒内传来的高度撑开信号
     window.addEventListener("message", function(event) {
-        if (event.data === "terminal_animation_complete") {
-            const mainContent = document.getElementById('main-content');
-            if (mainContent) {
-                mainContent.style.display = 'block';
-                mainContent.offsetHeight; // 触发重绘
-                mainContent.classList.add('visible');
-            }
+        if (event.data && event.data.type === "resize") {
+            // 动态调整 iframe 高度，保证音乐和正文能够完全显示出来，不出现双滚动条
+            iframe.style.height = (event.data.height + 40) + "px";
         }
     });
 </script>
