@@ -93,21 +93,25 @@ layout: default
 
             <article id="main-content" class="content-area">
                 {{ content }}
-                <div class="music-player">
-                  {% include music-set.html %}
-                </div>
             </article>
         </div>
 
     </div>
 </article>
 
+<div class="music-player" id="main-content-music-player">
+    {% include music-set.html %}
+</div>
+
 <script>
 (function() {
     function initTerminal() {
         const terminalBody = document.getElementById('terminal-body');
         const mainContent = document.getElementById('main-content');
+        const mainContentPlayer = document.getElementById('main-content-music-player');
         const terminal = document.getElementById('terminal');
+
+        if(mainContentPlayer) {mainContentPlayer.classList.add('visible');}
 
         if (!terminalBody || !mainContent) return false;
 
@@ -162,6 +166,7 @@ layout: default
                     const oldCursor = terminalBody.querySelector('.cursor');
                     if (oldCursor) oldCursor.remove();
                     mainContent.classList.add('visible');
+                    mainContentPlayer.classList.add('visible');
                 }, 200);
             }
         }
