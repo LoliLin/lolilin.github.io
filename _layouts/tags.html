@@ -1,22 +1,156 @@
 ---
 layout: page
-# All the Tags of posts.
+/* All the Tags of posts with an interactive relations network graph. */
 ---
 
-<div id="tags" class="d-flex flex-wrap mx-xl-2">
-  {% assign tags = '' | split: '' %}
-  {% for t in site.tags %}
-    {% assign tags = tags | push: t[0] %}
-  {% endfor %}
+<link rel="stylesheet" href="https://unpkg.com/vis-network/standalone/umd/vis-network.min.css" type="text/css" />
+<script type="text/javascript" src="https://unpkg.com/vis-network/standalone/umd/vis-network.min.js"></script>
 
-  {% assign sorted_tags = tags | sort_natural %}
+<style>
+  /* 容器样式，给云图一个有深度、科技感的背景 */
+  #tags-network-container {
+    width: 100%;
+    height: 60vh; /* 高度占屏幕的60%，可根据需要调整 */
+    border-radius: 12px;
+    background: radial-gradient(circle, #ffffff 0%, #f1f5f9 100%);
+    box-shadow: inset 0 0 20px rgba(0,0,0,0.02);
+    position: relative;
+    overflow: hidden;
+  }
+  /* 移动端适配：稍微调大高度 */
+  @media (max-width: 768px) {
+    #tags-network-container {
+      height: 70vh;
+    }
+  }
+  .graph-hint {
+    font-size: 12px;
+    color: #94a3b8;
+    text-align: center;
+    margin-top: 8px;
+  }
+</style>
 
-  {% for t in sorted_tags %}
-    <div>
-      <a class="tag" href="{{ t | slugify | url_encode | prepend: '/tags/' | append: '/' | relative_url }}">
-        {{ t -}}
-        <span class="text-muted">{{ site.tags[t].size }}</span>
-      </a>
-    </div>
-  {% endfor %}
-</div>
+<div id="tags-network-container"></div>
+<div class="graph-hint">💡 提示：每个圆圈代表一个标签，圆圈越大文章越多。支持双指缩放、拖拽和点击。</div>
+
+<script type="text/javascript">
+  document.addEventListener("DOMContentLoaded", function() {
+    
+    /* --- Step A: 从 Jekyll 动态生成原始数据 --- */
+    /* 提取所有标签及其包含的文章数量 */
+    const tagCounts = {
+      {% for t in site.tags %}
+        "{{ t[0] }}": {{ t[1].size }}{% unless forloop.last %},{% endunless %}
+      {% endfor %}
+    };
+
+    /* 提取文章的标签组合，用于建立“连线” */
+    const postTagsRelations = [
+      {% for post in site.posts %}
+        {% if post.tags.size > 1 %}
+          [{% for tag in post.tags %}"{{ tag }}"{% unless forloop.last %},{% endunless %}{% endfor %}]{% unless forloop.last %},{% endunless %}
+        {% endif %}
+      {% endfor %}
+    ];
+
+    /* --- Step B: 构建 Vis.js 格式的节点 (Nodes) --- */
+    /* 这里的颜色采用了更具活力的渐变粉蓝、粉紫系，契合“可爱屋”的轻科技感 */
+    const colorPalette = ['#a7f3d0', '#bae6fd', '#c7d2fe', '#fbcfe8', '#fecdd3', '#fed7aa'];
+    let nodeIndex = 0;
+    
+    const nodesArray = Object.keys(tagCounts).map(tagName => {
+      const count = tagCounts[tagName];
+      /* 根据文章数量动态调整节点大小 (基础大小 20 + 数量等比放大) */
+      const size = 20 + (count * 5); 
+      const randomColor = colorPalette[nodeIndex % colorPalette.length];
+      nodeIndex++;
+
+      return {
+        id: tagName,
+        label: `${tagName}\n(${count})`,
+        size: size,
+        shape: 'dot',
+        font: { size: 14, color: '#334155', face: 'PingFang SC, system-ui' },
+        color: {
+          background: randomColor,
+          border: '#ffffff',
+          highlight: { background: '#38bdf8', border: '#bae6fd' }
+        },
+        borderWidth: 2,
+        shadow: { enabled: true, color: 'rgba(0,0,0,0.05)', size: 4, x: 2, y: 2 }
+      };
+    });
+
+    /* --- Step C: 构建连线 (Edges) --- */
+    /* 统计哪些标签经常在同一篇文章里出现 */
+    const edgeMap = {};
+    postTagsRelations.forEach(tags => {
+      for (let i = 0; i < tags.length; i++) {
+        for (let j = i + 1; j < tags.length; j++) {
+          /* 保证 key 的唯一性 (按字母排序组合) */
+          const key = tags[i] < tags[j] ? `${tags[i]}_${tags[j]}` : `${tags[j]}_${tags[i]}`;
+          edgeMap[key] = (edgeMap[key] || 0) + 1;
+        }
+      }
+    });
+
+    const edgesArray = Object.keys(edgeMap).map(key => {
+      const [from, to] = key.split('_');
+      const weight = edgeMap[key];
+      return {
+        from: from,
+        to: to,
+        width: weight * 1.5, /* 共同出现次数越多，线越粗 */
+        color: { color: '#cbd5e1', highlight: '#38bdf8' },
+        smooth: { type: 'continuous' } /* 让连线平滑 */
+      };
+    });
+
+    /* --- Step D: 渲染网络图 --- */
+    const container = document.getElementById('tags-network-container');
+    const data = {
+      nodes: new vis.DataSet(nodesArray),
+      edges: new vis.DataSet(edgesArray)
+    };
+    
+    const options = {
+      nodes: {
+        scaling: { min: 15, max: 50 }
+      },
+      physics: {
+        forceAtlas2Based: {
+          gravitationalConstant: -50,
+          centralGravity: 0.05, /* 调高至 0.05，让孤立的 tag 也能受到向心力，收拢在星云外围不乱飞 */
+          springLength: 100,
+          springConstant: 0.08
+        },
+        solver: 'forceAtlas2Based',
+        stabilization: { iterations: 150 } /* 预先稳定布局，防止一打开乱飞 */
+      },
+      interaction: {
+        hover: true,
+        tooltipDelay: 200,
+        zoomView: true /* 支持双指缩放 */
+      }
+    };
+
+    const network = new vis.Network(container, data, options);
+
+    /* --- Step E: 点击标签跳转到对应的分类页 --- */
+    network.on("click", function(params) {
+      if (params.nodes.length > 0) {
+        const selectedTag = params.nodes[0];
+        /* 映射成你的 Jekyll 标签 URL 规则 */
+        /* 原本是: /tags/tag-name/ */
+        const slugifiedTag = encodeURIComponent(selectedTag.toLowerCase().replace(/[^a-z0-9]/g, '-'));
+        const targetUrl = `{{ '/tags/' | relative_url }}${slugifiedTag}/`;
+        
+        /* 延迟一小会儿跳转，让用户看清点击反馈 */
+        setTimeout(() => {
+          window.location.href = targetUrl;
+        }, 150);
+      }
+    });
+  });
+</script>
