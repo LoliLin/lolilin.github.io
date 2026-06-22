@@ -103,7 +103,6 @@ layout: default
 </article>
 
 <script>
-<script>
 (function() {
     function initTerminal() {
         const terminalBody = document.getElementById('terminal-body');
@@ -119,7 +118,7 @@ layout: default
             ["log", "[INFO] Decrypting \"小狐狸.sys\" [████████████████████] 100%", 400],
             ["cmd", "guest@kawaiis.in:~# ./compile_life.sh --mode=\"gentle\"", 150],
             ["log", "Loading memories: ...", 400],
-            ["cmd", "guest@kawaiis.in:~# cat overview.md", 300]
+            ["cmd", "guest@kawaiis.in:~# cat {{ title }}", 300]
         ];
 
         let currentLine = 0;
@@ -182,5 +181,4 @@ layout: default
         });
     }
 })();
-</script>
 </script>
