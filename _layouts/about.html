@@ -125,10 +125,12 @@ layout: default
 </article>
 
 <script>
-    // 保持您的脚本逻辑不变，由于直接在主页面运行，它能完美控制外层 DOM
+(function() {
     const terminalBody = document.getElementById("terminal-body");
     const mainContent = document.getElementById("main-content");
     const terminal = document.getElementById("terminal");
+
+    if (!terminalBody || !mainContent) return; // 容错
 
     const script = [
         ["cmd", "guest@kawaiis.in:~# grep -R \"Lolin\" ./verse", 400],
@@ -158,34 +160,38 @@ layout: default
     function runScript() {
         if (currentLine < script.length) {
             const [type, text, delay] = script[currentLine];
-            
             const oldCursor = document.querySelector(".cursor");
             if (oldCursor) oldCursor.remove();
 
             const lineElement = createLine(type, text);
-            
             const cursor = document.createElement("span");
             cursor.className = "cursor";
             lineElement.appendChild(cursor);
-            
+
             terminalBody.appendChild(lineElement);
-            // 滚动条随主页面平滑处理
+            // 平滑滚动到底部，但避免频繁抖动
+            terminal.scrollTop = terminal.scrollHeight;
             window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
-            
+
             currentLine++;
             setTimeout(runScript, delay);
         } else {
             setTimeout(() => {
-              const oldCursor = terminalBody.querySelector(".cursor");
-              if (oldCursor) oldCursor.remove();
-        
-              // 仅仅添加 visible 类名，绝不触碰 style.display
-              mainContent.classList.add("visible");
+                const oldCursor = terminalBody.querySelector(".cursor");
+                if (oldCursor) oldCursor.remove();
+                mainContent.classList.add("visible");
             }, 200);
         }
     }
 
-    window.addEventListener('load', () => {
-        setTimeout(runScript, 100);
-    });
+    function startWhenReady() {
+        setTimeout(runScript, 150); // 比原100ms稍长一点，给样式一些缓冲
+    }
+
+    if (document.readyState === 'complete') {
+        startWhenReady();
+    } else {
+        window.addEventListener('load', startWhenReady);
+    }
+})();
 </script>
