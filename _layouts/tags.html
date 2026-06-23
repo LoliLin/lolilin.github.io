@@ -5,269 +5,276 @@ layout: page
 
 <div id="tags" class="d-flex flex-wrap mx-xl-2">
 
-<link rel="stylesheet" href="https://unpkg.com/vis-network/standalone/umd/vis-network.min.css" type="text/css" />
-<script type="text/javascript" src="https://unpkg.com/vis-network/standalone/umd/vis-network.min.js"></script>
-
-<style>
-  /* 容器样式：星空深蓝渐变 */
-  #tags-network-container {
-    width: 100%;
-    height: 65vh;
-    border-radius: 16px;
-    background: radial-gradient(circle at center, #0f172a 0%, #020617 100%);
-    box-shadow: inset 0 0 30px rgba(0,0,0,0.7);
-    position: relative;
-    overflow: hidden;
-  }
-  @media (max-width: 768px) {
-    #tags-network-container {
-      height: 70vh;
-    }
-  }
-  .graph-hint {
-    font-size: 12px;
-    color: #64748b;
-    text-align: center;
-    margin-top: 8px;
-    width: 100%;
-  }
-</style>
-
-<div id="tags-network-container"></div>
-<div class="graph-hint">✨ 赛博星云图：支持双指缩放与拖拽。点击节点即可穿越。</div>
-
-<script type="text/javascript">
-  document.addEventListener("DOMContentLoaded", function() {
-    
-    /* --- Step A: 从 Jekyll 动态生成原始数据 --- */
-    const tagCounts = {
-      {% for t in site.tags %}
-        "{{ t[0] }}": {{ t[1].size }}{% unless forloop.last %},{% endunless %}
-      {% endfor %}
-    };
-
-    const postTagsRelations = [
-      {% for post in site.posts %}
-        {% if post.tags.size > 1 %}
-          [{% for tag in post.tags %}"{{ tag }}"{% unless forloop.last %},{% endunless %}{% endfor %}]{% unless forloop.last %},{% endunless %}
-        {% endif %}
-      {% endfor %}
-    ];
-
-    /* 筛出有连线的标签 */
-    const connectedTags = new Set();
-    postTagsRelations.forEach(tags => {
-      tags.forEach(t => connectedTags.add(t));
-    });
-
-    /* --- Step B: 构建节点 (使用内置 ellipse 完美的将字包裹在球内) --- */
-    /* 采用高饱和、带呼吸感的霓虹配色 */
-    const neonColors = [
-      { bg: '#f43f5e', border: '#fda4af', hover: '#ffe4e6' }, /* 妖艳粉 */
-      { bg: '#0ea5e9', border: '#7dd3fc', hover: '#e0f2fe' }, /* 科技蓝 */
-      { bg: '#a855f7', border: '#c084fc', hover: '#f3e8ff' }, /* 幻境紫 */
-      { bg: '#eab308', border: '#fef08a', hover: '#fef9c3' }, /* 琥珀金 */
-      { bg: '#22c55e', border: '#86efac', hover: '#dcfce7' }  /* 荧光绿 */
-    ];
-
-    let colorIdx = 0;
-    const nodesArray = Object.keys(tagCounts).map(tagName => {
-      const count = tagCounts[tagName];
-      const isSatellite = !connectedTags.has(tagName);
-      const color = neonColors[colorIdx % neonColors.length];
-      colorIdx++;
-
-      return {
-        id: tagName,
-        /* 标签名字和数量直接写在一起 */
-        label: `${tagName} (${count})`,
-        /* 使用官方内置形状 ellipse，字天然在球体内部，且完美兼容中文字符 */
-        shape: 'ellipse',
-        /* 根据文章数量等比缩放字号，形状会自动同步等比变大 */
-        font: { 
-          size: 13 + (count * 2), 
-          color: '#ffffff', 
-          face: 'PingFang SC, Microsoft YaHei, sans-serif',
-          bold: true
-        },
-        color: {
-          background: color.bg,
-          border: color.border,
-          highlight: { background: '#38bdf8', border: '#ffffff' },
-          hover: { background: color.bg, border: color.hover }
-        },
-        borderWidth: 2,
-        /* 开启官方内置的光影阴影效果，制造悬浮星空感 */
-        shadow: {
-          enabled: true,
-          color: 'rgba(0, 0, 0, 0.6)',
-          size: 10,
-          x: 0,
-          y: 4
-        },
-        /* 挂载卫星公转属性 */
-        isSatellite: isSatellite,
-        satAngle: Math.random() * Math.PI * 2,
-        satSpeed: 0.002 + Math.random() * 0.003,
-        satRadius: 140 + Math.random() * 50
-      };
-    });
-
-    /* --- Step C: 构建连线 (Edges) --- */
-    const edgeMap = {};
-    postTagsRelations.forEach(tags => {
-      for (let i = 0; i < tags.length; i++) {
-        for (let j = i + 1; j < tags.length; j++) {
-          const key = tags[i] < tags[j] ? `${tags[i]}_${tags[j]}` : `${tags[j]}_${tags[i]}`;
-          edgeMap[key] = (edgeMap[key] || 0) + 1;
+<div id="star-chart-wrapper" style="width:100vw; height:100vh; overflow:hidden; position:relative;">
+    <!-- ===== 样式（仅作用于本组件内部） ===== -->
+    <style>
+        /* 重置内部元素 */
+        .star-chart-wrapper * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
         }
-      }
-    });
-
-    const edgesArray = Object.keys(edgeMap).map(key => {
-      const [from, to] = key.split('_');
-      return {
-        from: from,
-        to: to,
-        width: edgeMap[key] * 2,
-        /* 半透明发光白线 */
-        color: { color: 'rgba(255, 255, 255, 0.15)', highlight: '#38bdf8', hover: 'rgba(255, 255, 255, 0.4)' },
-        smooth: { type: 'continuous' },
-        shadow: { enabled: true, color: 'rgba(0,0,0,0.3)', size: 3 }
-      };
-    });
-
-    /* --- Step D: 官方物理引擎与交互配置 --- */
-    const container = document.getElementById('tags-network-container');
-    const nodesDataSet = new vis.DataSet(nodesArray);
-    const data = {
-      nodes: nodesDataSet,
-      edges: new vis.DataSet(edgesArray)
-    };
-    
-    const options = {
-      nodes: {
-        margin: { top: 12, bottom: 12, left: 16, right: 16 } /* 给文字球内部留点呼吸边距 */
-      },
-      physics: {
-        forceAtlas2Based: {
-          gravitationalConstant: -40,
-          centralGravity: 0.05, /* 中心引力控场，锁死边界 */
-          springLength: 110,
-          springConstant: 0.07
-        },
-        solver: 'forceAtlas2Based',
-        stabilization: { enabled: true, iterations: 120 }
-      },
-      interaction: {
-        hover        },
-        value: radius,
-        isSatellite: isSatellite,
-        /* 给卫星自定义轨道公转参数 */
-        satAngle: Math.random() * Math.PI * 2,
-        satSpeed: 0.002 + Math.random() * 0.003, /* 旋转速度 */
-        satRadius: 150 + Math.random() * 70       /* 绕主星云的半径 */
-      };
-    });
-
-    /* --- Step C: 构建连线 (Edges) --- */
-    const edgeMap = {};
-    postTagsRelations.forEach(tags => {
-      for (let i = 0; i < tags.length; i++) {
-        for (let j = i + 1; j < tags.length; j++) {
-          const key = tags[i] < tags[j] ? `${tags[i]}_${tags[j]}` : `${tags[j]}_${tags[i]}`;
-          edgeMap[key] = (edgeMap[key] || 0) + 1;
+        .star-chart-wrapper {
+            width: 100%;
+            height: 100%;
+            background: transparent; /* 完全透明，继承父背景 */
+            font-family: 'Segoe UI', 'PingFang SC', Roboto, sans-serif;
+            color: #fff;
+            user-select: none;
+            position: relative;
         }
-      }
-    });
-
-    const edgesArray = Object.keys(edgeMap).map(key => {
-      const [from, to] = key.split('_');
-      return {
-        from: from,
-        to: to,
-        width: edgeMap[key] * 2,
-        color: { color: 'rgba(255, 255, 255, 0.15)', highlight: '#38bdf8' },
-        smooth: { type: 'continuous' }
-      };
-    });
-
-    /* --- Step D: 稳定的物理布局引擎 --- */
-    const container = document.getElementById('tags-network-container');
-    const nodesDataSet = new vis.DataSet(nodesArray);
-    const data = {
-      nodes: nodesDataSet,
-      edges: new vis.DataSet(edgesArray)
-    };
-    
-    const options = {
-      nodes: {
-        margin: { top: 12, bottom: 12, left: 16, right: 16 } /* 给文字球内部留点呼吸边距 */
-      },
-      physics: {
-        forceAtlas2Based: {
-          gravitationalConstant: -40,
-          centralGravity: 0.05, /* 中心引力控场，锁死边界 */
-          springLength: 110,
-          springConstant: 0.07
-        },
-        solver: 'forceAtlas2Based',
-        stabilization: { enabled: true, iterations: 120 }
-      },
-      interaction: {
-        hover: true,
-        zoomView: true,
-        dragView: true
-      }
-    };
-
-    const network = new vis.Network(container, data, options);
-
-    /* --- Step E: 官方原生 Render 驱动卫星轻量公转 (稳如泰山) --- */
-    network.on("render", function () {
-      let updateBuffer = [];
-
-      nodesDataSet.forEach(node => {
-        if (node.isSatellite) {
-          node.satAngle += node.satSpeed;
-          const newX = Math.cos(node.satAngle) * node.satRadius;
-          const newY = Math.sin(node.satAngle) * node.satRadius;
-          
-          updateBuffer.push({ 
-            id: node.id, 
-            x: newX, 
-            y: newY, 
-            satAngle: node.satAngle 
-          });
+        #chart-container {
+            width: 100%;
+            height: 100%;
         }
-      });
+    </style>
 
-      if (updateBuffer.length > 0) {
-        /* 官方标准的 DataSet 异步微调，绝对不会引发黑屏或死循环 */
-        nodesDataSet.update(updateBuffer);
-      }
-    });
+    <!-- ===== 图表容器 ===== -->
+    <div id="chart-container"></div>
 
-    /* 解算完成后自适应居中 */
-    network.once("stabilizationIterationsDone", function () {
-      network.fit({
-        animation: { duration: 1000, easingFunction: 'easeInOutQuad' }
-      });
-    });
+    <!-- ===== 脚本（包含所有数据和逻辑） ===== -->
+    <script>
+        // 立即执行函数，避免全局污染
+        (function() {
+            // ---------- 数据 ----------
+            const tagCounts = {
+              {% for t in site.tags %}
+                "{{ t[0] }}": {{ t[1].size }}{% unless forloop.last %},{% endunless %}
+              {% endfor %}
+            };
 
-    /* --- Step F: 穿越跳转 --- */
-    network.on("click", function(params) {
-      if (params.nodes.length > 0) {
-        const selectedTag = params.nodes[0];
-        const slugifiedTag = encodeURIComponent(selectedTag.toLowerCase().replace(/[^a-z0-9\u4e00-\u9fa5]/g, '-'));
-        const targetUrl = `{{ '/tags/' | relative_url }}${slugifiedTag}/`;
-        
-        setTimeout(() => {
-          window.location.href = targetUrl;
-        }, 150);
-      }
-    });
-  });
-</script>
+            const postTagsRelations = [
+              {% for post in site.posts %}
+                {% if post.tags.size > 1 %}
+                  [{% for tag in post.tags %}"{{ tag }}"{% unless forloop.last %},{% endunless %}{% endfor %}]{% unless forloop.last %},{% endunless %}
+                {% endif %}
+              {% endfor %}
+            ]
+            const tagLinkMap = {
+              {% for t in site.tags %}
+                "{{ t[0] }}": "{{ t | slugify | url_encode | prepend: '/tags/' | append: '/' | relative_url }}"{% unless forloop.last %},{% endunless %}
+              {% endfor %}
+            };
 
+            const nodes = Object.keys(tagCounts).map(key => {
+                const count = tagCounts[key];
+                const baseSize = 18;
+                const size = baseSize + count * 10;
+                return {
+                    name: key,
+                    value: count,
+                    symbolSize: Math.min(size, 60),
+                    itemStyle: { color: null }
+                };
+            });
+
+            function getColorFromName(name) {
+                let hash = 0;
+                for (let i = 0; i < name.length; i++) {
+                    hash = name.charCodeAt(i) + ((hash << 5) - hash);
+                }
+                const hue = 200 + Math.abs(hash % 140);
+                const sat = 60 + Math.abs(hash % 25);
+                const lig = 60 + Math.abs(hash % 25);
+                return `hsl(${hue}, ${sat}%, ${lig}%)`;
+            }
+
+            nodes.forEach(node => {
+                node.itemStyle = {
+                    color: getColorFromName(node.name),
+                    borderColor: 'rgba(255,255,255,0.15)',
+                    borderWidth: 1.5,
+                    shadowBlur: 18,
+                    shadowColor: 'rgba(120, 80, 255, 0.25)'
+                };
+            });
+
+            const edgeSet = new Set();
+            const edges = [];
+            postTagsRelations.forEach(group => {
+                for (let i = 0; i < group.length; i++) {
+                    for (let j = i + 1; j < group.length; j++) {
+                        const a = group[i];
+                        const b = group[j];
+                        const key = [a, b].sort().join('|||');
+                        if (!edgeSet.has(key)) {
+                            edgeSet.add(key);
+                            edges.push({
+                                source: a,
+                                target: b,
+                                lineStyle: {
+                                    color: 'rgba(180, 160, 255, 0.25)',
+                                    width: 1.8,
+                                    curveness: 0.15,
+                                    opacity: 0.6,
+                                    shadowBlur: 6,
+                                    shadowColor: 'rgba(100, 80, 255, 0.15)'
+                                }
+                            });
+                        }
+                    }
+                }
+            });
+
+            
+            const container = document.getElementById('chart-container');
+            const myChart = echarts.init(container, 'dark', { renderer: 'canvas' });
+
+            const option = {
+                backgroundColor: 'transparent',
+                tooltip: {
+                    trigger: 'item',
+                    backgroundColor: 'rgba(16, 10, 35, 0.85)',
+                    borderColor: 'rgba(180, 160, 255, 0.25)',
+                    borderWidth: 1,
+                    padding: [10, 16],
+                    textStyle: { color: '#f0ecff', fontSize: 13 },
+                    formatter: function(params) {
+                        if (params.dataType === 'node') {
+                            const name = params.name;
+                            const count = tagCounts[name] || 0;
+                            const hasLink = tagLinkMap[name] ? '🔗 可点击跳转' : '';
+                            return `
+                                    <strong style="font-size:15px; color:#c8b8ff;">✦ ${name}</strong><br/>
+                                    出现次数：<strong style="color:#a78aff;">${count}</strong> 次
+                                    ${hasLink ? '<br/><span style="color:rgba(180,200,255,0.7);">' + hasLink + '</span>' : ''}
+                                `;
+                        } else if (params.dataType === 'edge') {
+                            return `
+                                    <span style="color:#b8a5ff;">${params.data.source}</span>
+                                    <span style="color:rgba(255,255,255,0.3);"> ⟷ </span>
+                                    <span style="color:#b8a5ff;">${params.data.target}</span>
+                                `;
+                        }
+                        return '';
+                    }
+                },
+                series: [{
+                    type: 'graph',
+                    layout: 'force',
+                    force: {
+                        repulsion: 380,
+                        edgeLength: [120, 280],
+                        gravity: 0.08,
+                        friction: 0.12,
+                        layoutAnimation: true,
+                    },
+                    data: nodes,
+                    edges: edges,
+                    symbol: 'circle',
+                    symbolSize: function(val, params) {
+                        return params.data.symbolSize || 22;
+                    },
+                    label: {
+                        show: true,
+                        position: 'inside',
+                        color: '#ffffff',
+                        fontSize: 11,
+                        fontWeight: 500,
+                        fontFamily: '"Segoe UI", "PingFang SC", sans-serif',
+                        textShadowBlur: 8,
+                        textShadowColor: 'rgba(0, 0, 0, 0.7)',
+                        overflow: 'break',
+                        lineHeight: 14,
+                    },
+                    edgeSymbol: ['none', 'none'],
+                    edgeLabel: { show: false },
+                    lineStyle: {
+                        color: 'rgba(180, 160, 255, 0.2)',
+                        width: 1.5,
+                        curveness: 0.15,
+                        opacity: 0.5
+                    },
+                    emphasis: {
+                        focus: 'adjacency',
+                        lineStyle: {
+                            width: 3,
+                            color: 'rgba(200, 180, 255, 0.7)',
+                            shadowBlur: 12,
+                            shadowColor: 'rgba(130, 100, 255, 0.4)'
+                        },
+                        itemStyle: {
+                            shadowBlur: 28,
+                            shadowColor: 'rgba(130, 100, 255, 0.5)',
+                            borderWidth: 2.5,
+                            borderColor: 'rgba(255,255,255,0.5)'
+                        },
+                        label: {
+                            fontSize: 13,
+                            fontWeight: 600,
+                            color: '#ffffff',
+                            textShadowBlur: 12,
+                            textShadowColor: 'rgba(0,0,0,0.8)'
+                        }
+                    },
+                    roam: true,
+                    draggable: true,
+                    animationDuration: 1500,
+                    animationEasing: 'cubicOut',
+                    categories: [],
+                }]
+            };
+
+            myChart.setOption(option);
+
+            myChart.on('click', function(params) {
+                if (params.dataType === 'node') {
+                    const tagName = params.name;
+                    myChart.dispatchAction({
+                        type: 'highlight',
+                        seriesIndex: 0,
+                        dataIndex: params.dataIndex
+                    });
+                    const link = tagLinkMap[tagName];
+                    if (link) {
+                        window.open(link, '_blank');
+                    }
+                } else {
+                    myChart.dispatchAction({ type: 'downplay', seriesIndex: 0 });
+                }
+            });
+
+            function resizeChart() {
+                myChart.resize();
+            }
+            window.addEventListener('resize', resizeChart);
+            if (window.ResizeObserver) {
+                const ro = new ResizeObserver(() => resizeChart());
+                ro.observe(container);
+            }
+
+            function resetLayout() {
+                myChart.setOption({
+                    series: [{
+                        force: {
+                            layoutAnimation: true,
+                            repulsion: 380,
+                            edgeLength: [120, 280],
+                        }
+                    }]
+                });
+                myChart.setOption({
+                    series: [{ data: nodes, edges: edges }]
+                });
+            }
+            container.addEventListener('dblclick', resetLayout);
+            document.addEventListener('keydown', function(e) {
+                if ((e.key === 'r' || e.key === 'R') && !e.ctrlKey && !e.metaKey) {
+                    resetLayout();
+                    e.preventDefault();
+                }
+            });
+
+            console.log('✨ 标签星图已加载（组件模式）');
+        })();
+    </script>
+
+    <!-- 确保 ECharts 库已加载（若宿主页面未加载，需提前引入） -->
+    <!-- 如果宿主页面已全局引入 ECharts，可注释掉下一行 -->
+    <script src="https://cdn.jsdelivr.net/npm/echarts@5.5.0/dist/echarts.min.js">
+    </script>
 </div>
+</div>
+    ];
+
+   
