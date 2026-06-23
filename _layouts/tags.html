@@ -38,9 +38,7 @@ layout: page
 
     <!-- ===== 脚本（包含所有数据和逻辑） ===== -->
     <script>
-        // 立即执行函数，避免全局污染
         (function() {
-            // ---------- 数据 ----------
             const tagCounts = {
               {% for t in site.tags %}
                 "{{ t[0] }}": {{ t[1].size }}{% unless forloop.last %},{% endunless %}
