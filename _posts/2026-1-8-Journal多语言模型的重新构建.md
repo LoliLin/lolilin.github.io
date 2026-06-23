@@ -2,7 +2,7 @@
 title: Journal多语言模型的重新构建
 date: 2026-1-8 22:0:0 +0800
 categories: [开发]
-tags: [android,codex]
+tags: [android,codex,水素]
 ---
 
 这个软件中的文本99%都是硬编码和来自Json文件中的硬编码。
