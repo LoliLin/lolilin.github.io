@@ -3,9 +3,13 @@ layout: page
 # All the Tags of posts.
 ---
 
-<div id="tags" class="d-flex flex-wrap mx-xl-2">
+<div id="tags" class="d-flex flex-wrap mx-xl-2" style="width:100%; height:500px; position:relative;">
 
-<div id="star-chart-wrapper" style="width:100vw; height:100vh; overflow:hidden; position:relative;">
+<div id="star-chart-wrapper" style="width:100%; height:600px; overflow:hidden; position:relative;">
+    <!-- 确保 ECharts 库已加载（若宿主页面未加载，需提前引入） -->
+    <!-- 如果宿主页面已全局引入 ECharts，可注释掉下一行 -->
+    <script src="https://cdn.jsdelivr.net/npm/echarts@5.5.0/dist/echarts.min.js">
+    </script>
     <!-- ===== 样式（仅作用于本组件内部） ===== -->
     <style>
         /* 重置内部元素 */
@@ -30,7 +34,7 @@ layout: page
     </style>
 
     <!-- ===== 图表容器 ===== -->
-    <div id="chart-container"></div>
+    <div id="chart-container" style="width:100%; height:100%; min-height:400px;"></div>
 
     <!-- ===== 脚本（包含所有数据和逻辑） ===== -->
     <script>
@@ -268,11 +272,6 @@ layout: page
 
             console.log('✨ 标签星图已加载（组件模式）');
         })();
-    </script>
-
-    <!-- 确保 ECharts 库已加载（若宿主页面未加载，需提前引入） -->
-    <!-- 如果宿主页面已全局引入 ECharts，可注释掉下一行 -->
-    <script src="https://cdn.jsdelivr.net/npm/echarts@5.5.0/dist/echarts.min.js">
     </script>
 </div>
 </div>
