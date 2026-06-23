@@ -12,6 +12,762 @@ layout: page
 
 {% assign sort_categories = site.categories | sort %}
 
+<style>
+
+        .carousel-wrap {
+            position: relative;
+            width: 100%;
+            max-width: 1200px;
+            height: 440px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background: transparent;
+            cursor: grab;
+            touch-action: none;
+            overflow: hidden;
+        }
+        .carousel-wrap:active {
+            cursor: grabbing;
+        }
+
+        .cards-stage {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            pointer-events: none;
+        }
+
+        .card-item {
+            position: absolute;
+            width: 300px;
+            height: 330px;
+            cursor: pointer;
+            transition: transform 0.08s cubic-bezier(0.34, 1.2, 0.64, 1),
+                opacity 0.08s ease,
+                z-index 0s,
+                box-shadow 0.3s ease;
+            transform-style: preserve-3d;
+            will-change: transform, opacity;
+            pointer-events: auto;
+            border-radius: 0;
+            box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.05);
+            background-color: #1e233b;
+            background-size: cover;
+            background-position: center;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            padding: 28px 18px;
+            text-align: center;
+            color: #fff;
+            overflow: hidden;
+            touch-action: manipulation;
+            border: none;
+        }
+
+        .card-item::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.45);
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        .card-item .card-icon,
+        .card-item .card-title,
+        .card-item .card-sub {
+            position: relative;
+            z-index: 1;
+            pointer-events: none;
+        }
+
+        .card-item .card-icon {
+            font-size: 56px;
+            margin-bottom: 14px;
+            filter: drop-shadow(0 4px 12px rgba(0, 0, 0, 0.5));
+        }
+        .card-item .card-title {
+            font-size: 28px;
+            font-weight: 700;
+            letter-spacing: 1px;
+            text-shadow: 0 2px 12px rgba(0, 0, 0, 0.6);
+            color: #fff;
+            background: none;
+            -webkit-text-fill-color: #fff;
+        }
+        .card-item .card-sub {
+            margin-top: 8px;
+            font-size: 14px;
+            opacity: 0.7;
+            letter-spacing: 2px;
+            color: #ddd;
+            text-shadow: 0 2px 8px rgba(0, 0, 0, 0.6);
+        }
+
+        /* 中央卡片放大 */
+        .card-item.center-card {
+            transform: scale(1.06) !important;
+            box-shadow: 0 0 40px rgba(255, 255, 255, 0.2), 0 0 0 2px rgba(255, 255, 255, 0.15);
+            z-index: 20;
+        }
+
+        .card-item .accent-bar {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            height: 4px;
+            z-index: 2;
+            pointer-events: none;
+        }
+
+        .indicators {
+            position: absolute;
+            bottom: -36px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            gap: 10px;
+            z-index: 100;
+            pointer-events: auto;
+        }
+        .dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.2);
+            border: none;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            padding: 0;
+            touch-action: manipulation;
+        }
+        .dot.active {
+            background: #7c8cff;
+            box-shadow: 0 0 16px rgba(108, 124, 255, 0.5);
+            transform: scale(1.3);
+        }
+        .dot:hover {
+            background: rgba(255, 255, 255, 0.4);
+        }
+
+        @media (max-width: 820px) {
+            .carousel-wrap {
+                height: 360px;
+            }
+            .card-item {
+                width: 230px;
+                height: 260px;
+                padding: 20px 14px;
+            }
+            .card-item .card-icon {
+                font-size: 44px;
+            }
+            .card-item .card-title {
+                font-size: 22px;
+            }
+            .card-item .card-sub {
+                font-size: 12px;
+            }
+        }
+
+        @media (max-width: 500px) {
+            .carousel-wrap {
+                height: 280px;
+            }
+            .card-item {
+                width: 170px;
+                height: 195px;
+                padding: 14px 10px;
+            }
+            .card-item .card-icon {
+                font-size: 32px;
+                margin-bottom: 8px;
+            }
+            .card-item .card-title {
+                font-size: 16px;
+            }
+            .card-item .card-sub {
+                font-size: 10px;
+                margin-top: 4px;
+            }
+            .indicators {
+                bottom: -28px;
+                gap: 6px;
+            }
+            .dot {
+                width: 8px;
+                height: 8px;
+            }
+        }
+    </style>
+<div>
+    <div class="carousel-wrap" id="carouselWrap">
+        <div class="cards-stage" id="cardsStage"></div>
+        <div class="indicators" id="indicators"></div>
+    </div>
+
+    <script>
+        // ================================================================
+        //  🎯  可修改参数
+        // ================================================================
+
+        const CARD_DATA = [
+{% for category in sort_categories %}
+  {% assign category_name = category | first %}
+  {% capture _category_url %}/categories/{{ category_name | slugify | url_encode }}/{% endcapture %}
+  {% assign top_posts_size = site.categories[category_name] | size %}
+  {
+      title: '{{ category_name }}',
+      icon: '',
+      sub: '{{ top_posts_size }}',
+      link: '{{ _category_url | relative_url }}',
+      accent: '#FFD93D',
+      bg: '/assets/categories/{{ category_name }}.png'
+  } {% unless forloop.last %},{% endunless %}
+{% endfor %}
+      ];
+
+
+        const CONFIG = {
+            // ---------- 卡片布局 ----------
+            cardWidth: 300,
+            cardHeight: 330,
+            offsetStep: 300, // 密铺（等于卡片宽度）
+
+            // ---------- 透明度/层级 ----------
+            opacityCenter: 1,
+            opacitySide: 0.7,
+            opacityFar: 0.4,
+            zCenter: 20,
+            zSide: 10,
+            zFar: 3,
+
+            // ---------- 拖拽滑动翻页阈值 ----------
+            dragThreshold: 60, // 手指滑动多少像素触发翻页
+
+            // ---------- 悬停动态间隔 ----------
+            // 鼠标在边缘时最短间隔 (ms)，在中间区域（0.5位置）最长间隔
+            hoverMinInterval: 60,
+            hoverMaxInterval: 600,
+
+            // ---------- 按键参数 ----------
+            keySingleDuration: 200, // 单次按键翻页动画时长
+            keyHoldInterval: 150, // 长按翻页间隔
+            keyHoldDelay: 300, // 长按延迟
+            autoScrollDuration: 80, // 自动翻页动画时长
+
+            // ---------- 悬停触发区域 ----------
+            hoverLeftThreshold: 0.35,
+            hoverRightThreshold: 0.65,
+        };
+
+        // ================================================================
+        //  🧠  核心逻辑
+        // ================================================================
+
+        const totalCards = CARD_DATA.length;
+        let currentIndex = 0;
+        let floatOffset = 0;
+        let isAnimating = false;
+
+        // ---------- 拖拽状态 ----------
+        let isDragging = false;
+        let dragStartX = 0;
+        let dragAccumulated = 0; // 累积滑动距离
+
+        const isTouchDevice = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
+
+        const stage = document.getElementById('cardsStage');
+        const indicatorsEl = document.getElementById('indicators');
+        const wrap = document.getElementById('carouselWrap');
+
+        let cardWidth = CONFIG.cardWidth;
+
+        // ---------- 工具 ----------
+        function getCardWidth() {
+            const sample = stage.querySelector('.card-item');
+            if (sample) return sample.offsetWidth || CONFIG.cardWidth;
+            return CONFIG.cardWidth;
+        }
+
+        function mod(n, m) { return ((n % m) + m) % m; }
+
+        // ---------- 构建卡片 ----------
+        function buildCards() {
+            stage.innerHTML = '';
+            const frag = document.createDocumentFragment();
+            CARD_DATA.forEach((data, idx) => {
+                const card = document.createElement('div');
+                card.className = 'card-item';
+                card.dataset.index = idx;
+                if (data.bg) {
+                    card.style.backgroundImage = `url(${data.bg})`;
+                } else {
+                    card.style.background = 'linear-gradient(145deg, #2a2f4f, #1e233b)';
+                }
+
+                const icon = document.createElement('div');
+                icon.className = 'card-icon';
+                icon.textContent = data.icon;
+
+                const title = document.createElement('div');
+                title.className = 'card-title';
+                title.textContent = data.title;
+
+                const sub = document.createElement('div');
+                sub.className = 'card-sub';
+                sub.textContent = data.sub || '';
+
+                const bar = document.createElement('div');
+                bar.className = 'accent-bar';
+                bar.style.background = data.accent;
+
+                card.appendChild(icon);
+                card.appendChild(title);
+                if (data.sub) card.appendChild(sub);
+                card.appendChild(bar);
+
+                // 移动端点击
+                let touchStartX = 0,
+                    touchStartY = 0;
+                card.addEventListener('touchstart', (e) => {
+                    const touch = e.touches[0];
+                    touchStartX = touch.clientX;
+                    touchStartY = touch.clientY;
+                }, { passive: true });
+
+                card.addEventListener('touchend', (e) => {
+                    if (isAnimating || isDragging) return;
+                    const touch = e.changedTouches[0];
+                    const dx = touch.clientX - touchStartX;
+                    const dy = touch.clientY - touchStartY;
+                    if (Math.abs(dx) < 10 && Math.abs(dy) < 10) {
+                        e.preventDefault();
+                        if (data.link) {
+                            window.open(data.link, '_blank');
+                        }
+                    }
+                }, { passive: false });
+
+                // 桌面端 click
+                card.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    if (isAnimating || isDragging) return;
+                    if (data.link) {
+                        window.open(data.link, '_blank');
+                    }
+                });
+
+                frag.appendChild(card);
+            });
+            stage.appendChild(frag);
+
+            cardWidth = getCardWidth();
+            CONFIG.offsetStep = cardWidth;
+        }
+
+        // ---------- 指示器 ----------
+        function buildIndicators() {
+            indicatorsEl.innerHTML = '';
+            for (let i = 0; i < totalCards; i++) {
+                const dot = document.createElement('button');
+                dot.className = 'dot' + (i === currentIndex ? ' active' : '');
+                dot.dataset.index = i;
+                dot.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    if (i !== currentIndex && !isAnimating) goTo(i, CONFIG.keySingleDuration);
+                });
+                indicatorsEl.appendChild(dot);
+            }
+        }
+
+        function updateIndicators() {
+            const dots = indicatorsEl.querySelectorAll('.dot');
+            dots.forEach((dot, i) => {
+                dot.classList.toggle('active', i === currentIndex);
+            });
+        }
+
+        // ---------- 卡片状态 ----------
+        function getCardState(index, offset) {
+            const diff = index - offset;
+            const translateX = diff * CONFIG.offsetStep;
+            const absDiff = Math.abs(diff);
+            let opacity, zIndex;
+            if (absDiff === 0) {
+                opacity = CONFIG.opacityCenter;
+                zIndex = CONFIG.zCenter;
+            } else if (absDiff < 1) {
+                const t = absDiff;
+                opacity = CONFIG.opacityCenter + (CONFIG.opacitySide - CONFIG.opacityCenter) * t;
+                zIndex = CONFIG.zSide;
+            } else if (absDiff < 2) {
+                const t = absDiff - 1;
+                opacity = CONFIG.opacitySide + (CONFIG.opacityFar - CONFIG.opacitySide) * t;
+                zIndex = CONFIG.zFar;
+            } else {
+                opacity = CONFIG.opacityFar;
+                zIndex = CONFIG.zFar;
+            }
+            return { translateX, opacity, zIndex };
+        }
+
+        // ---------- 渲染 ----------
+        function renderCards(offset, animate = true, duration = CONFIG.autoScrollDuration) {
+            const cards = stage.querySelectorAll('.card-item');
+            const totalWidth = totalCards * CONFIG.offsetStep;
+            const containerWidth = wrap.offsetWidth;
+            const halfContainer = containerWidth / 2 + cardWidth / 2;
+
+            const centerIdx = Math.round(offset);
+            const centerIndexMod = mod(centerIdx, totalCards);
+            currentIndex = centerIndexMod;
+            updateIndicators();
+
+            if (!animate) {
+                cards.forEach(c => c.style.transition = 'none');
+            } else {
+                cards.forEach(c => {
+                    c.style.transitionDuration = duration + 'ms';
+                    c.style.transitionProperty = 'transform, opacity';
+                });
+            }
+
+            cards.forEach((card, idx) => {
+                const state = getCardState(idx, offset);
+                let translateX = state.translateX;
+
+                if (translateX > halfContainer) {
+                    translateX -= totalWidth;
+                } else if (translateX < -halfContainer) {
+                    translateX += totalWidth;
+                }
+
+                if (animate && translateX !== state.translateX) {
+                    card.style.transition = 'none';
+                    void card.offsetHeight;
+                    card.style.transitionDuration = duration + 'ms';
+                    card.style.transitionProperty = 'transform, opacity';
+                }
+
+                const isCenter = (idx === centerIndexMod);
+                if (isCenter) {
+                    card.classList.add('center-card');
+                    card.style.transform = `translateX(${translateX}px) scale(1.06)`;
+                } else {
+                    card.classList.remove('center-card');
+                    card.style.transform = `translateX(${translateX}px) scale(1)`;
+                }
+                card.style.opacity = state.opacity;
+                card.style.zIndex = state.zIndex;
+            });
+
+            if (!animate) {
+                void document.body.offsetHeight;
+                cards.forEach(c => {
+                    c.style.transition = '';
+                    c.style.transitionDuration = CONFIG.autoScrollDuration + 'ms';
+                });
+            }
+        }
+
+        // ---------- 翻页核心 ----------
+        function goTo(targetIndex, duration = CONFIG.autoScrollDuration) {
+            if (isAnimating) return;
+            targetIndex = mod(targetIndex, totalCards);
+            if (targetIndex === currentIndex) return;
+            isAnimating = true;
+            floatOffset = targetIndex;
+            renderCards(floatOffset, true, duration);
+            setTimeout(() => {
+                isAnimating = false;
+                renderCards(floatOffset, false);
+            }, duration + 10);
+        }
+
+        function prev(duration = CONFIG.autoScrollDuration) {
+            if (!isAnimating) goTo(mod(currentIndex - 1, totalCards), duration);
+        }
+
+        function next(duration = CONFIG.autoScrollDuration) {
+            if (!isAnimating) goTo(mod(currentIndex + 1, totalCards), duration);
+        }
+
+        // ================================================================
+        //  🖱️  拖拽滑动翻页（卡片不跟随，仅触发翻页）
+        // ================================================================
+
+        function onDragStart(e) {
+            if (isAnimating) return;
+            const point = e.touches ? e.touches[0] : e;
+            if (e.type === 'mousedown' && e.button !== 0) return;
+
+            isDragging = true;
+            dragStartX = point.clientX;
+            dragAccumulated = 0;
+
+            stopAutoScroll(); // 停止悬停和键盘
+
+            // 不加过渡，但不移动卡片，所以无所谓
+            document.addEventListener('mousemove', onDragMove);
+            document.addEventListener('mouseup', onDragEnd);
+            document.addEventListener('touchmove', onDragMove, { passive: false });
+            document.addEventListener('touchend', onDragEnd, { passive: false });
+
+            e.preventDefault && e.preventDefault();
+        }
+
+        function onDragMove(e) {
+            if (!isDragging) return;
+            const point = e.touches ? e.touches[0] : e;
+            const deltaX = point.clientX - dragStartX;
+            // 累积滑动距离
+            dragAccumulated += deltaX;
+            dragStartX = point.clientX; // 重置起始点，实现连续累积
+
+            const threshold = CONFIG.dragThreshold;
+            // 判断是否超过阈值
+            if (dragAccumulated > threshold) {
+                // 向右滑 -> prev
+                prev(CONFIG.autoScrollDuration);
+                dragAccumulated = 0; // 重置累积
+            } else if (dragAccumulated < -threshold) {
+                // 向左滑 -> next
+                next(CONFIG.autoScrollDuration);
+                dragAccumulated = 0;
+            }
+
+            e.preventDefault && e.preventDefault();
+        }
+
+        function onDragEnd(e) {
+            document.removeEventListener('mousemove', onDragMove);
+            document.removeEventListener('mouseup', onDragEnd);
+            document.removeEventListener('touchmove', onDragMove);
+            document.removeEventListener('touchend', onDragEnd);
+            isDragging = false;
+            dragAccumulated = 0;
+            // 不执行任何回弹，直接结束
+        }
+
+        // ================================================================
+        //  🖱️  悬停自动翻页（动态间隔，与偏心距有关）
+        // ================================================================
+
+        let hoverTimer = null;
+        let hoverDir = 0;
+
+        function getHoverInterval(ratio) {
+            // ratio 0~1，距离边缘越近（ratio 接近 0 或 1），间隔越小
+            // 计算到最近边缘的距离
+            const distToEdge = Math.min(ratio, 1 - ratio);
+            // 映射到 [0, 0.5] 范围，0 表示边缘，0.5 表示中间
+            // 间隔 = max - (max-min) * (1 - 2*distToEdge)？ 但简单线性映射
+            // 归一化：从边缘到中间，映射 0->1
+            const normalized = 1 - (distToEdge * 2); // 0边缘，1中间
+            // 间隔范围 min ~ max
+            const interval = CONFIG.hoverMaxInterval - (CONFIG.hoverMaxInterval - CONFIG.hoverMinInterval) * (1 - normalized);
+            return Math.min(CONFIG.hoverMaxInterval, Math.max(CONFIG.hoverMinInterval, interval));
+        }
+
+        function startHoverScroll(dir, e) {
+            // 获取鼠标位置比例
+            const rect = wrap.getBoundingClientRect();
+            const x = e.clientX - rect.left;
+            const ratio = x / rect.width;
+            const interval = getHoverInterval(ratio);
+
+            if (hoverTimer) {
+                clearInterval(hoverTimer);
+                hoverTimer = null;
+            }
+            // 立即执行一次
+            if (dir === -1) prev(CONFIG.autoScrollDuration);
+            else if (dir === 1) next(CONFIG.autoScrollDuration);
+
+            hoverTimer = setInterval(() => {
+                if (dir === -1) prev(CONFIG.autoScrollDuration);
+                else if (dir === 1) next(CONFIG.autoScrollDuration);
+            }, interval);
+        }
+
+        function stopHoverScroll() {
+            if (hoverTimer) {
+                clearInterval(hoverTimer);
+                hoverTimer = null;
+            }
+        }
+
+        if (!isTouchDevice) {
+            wrap.addEventListener('mousemove', (e) => {
+                if (isDragging) return;
+                const rect = wrap.getBoundingClientRect();
+                const x = e.clientX - rect.left;
+                const ratio = x / rect.width;
+                let dir = 0;
+                if (ratio < CONFIG.hoverLeftThreshold) dir = -1;
+                else if (ratio > CONFIG.hoverRightThreshold) dir = 1;
+
+                if (dir !== 0) {
+                    // 如果方向改变或定时器不存在，重新启动
+                    if (!hoverTimer || hoverDir !== dir) {
+                        stopHoverScroll();
+                        hoverDir = dir;
+                        startHoverScroll(dir, e);
+                    } else {
+                        // 方向相同，但可能间隔需要更新（因为鼠标移动改变了位置）
+                        // 为了动态更新间隔，我们重启定时器
+                        // 但频繁重启可能导致抖动，为了流畅，可以仅当距离变化较大时重启
+                        // 简单做法：每次都重启，但间隔变化平滑
+                        stopHoverScroll();
+                        startHoverScroll(dir, e);
+                    }
+                } else {
+                    stopHoverScroll();
+                    hoverDir = 0;
+                }
+            });
+            wrap.addEventListener('mouseleave', () => {
+                stopHoverScroll();
+                hoverDir = 0;
+            });
+        }
+
+        // ================================================================
+        //  ⌨️  键盘控制（单次 + 长按）
+        // ================================================================
+
+        let keyHoldTimer = null;
+        let keyRepeatTimer = null;
+        let keyDir = 0;
+
+        function startKeyRepeat(dir) {
+            // 停止之前的键盘定时器
+            if (keyRepeatTimer) {
+                clearInterval(keyRepeatTimer);
+                keyRepeatTimer = null;
+            }
+            if (keyHoldTimer) {
+                clearTimeout(keyHoldTimer);
+                keyHoldTimer = null;
+            }
+            keyDir = dir;
+
+            // 立即执行一次（单次按键效果）
+            if (dir === -1) prev(CONFIG.keySingleDuration);
+            else if (dir === 1) next(CONFIG.keySingleDuration);
+
+            // 设置延迟，进入长按模式
+            keyHoldTimer = setTimeout(() => {
+                // 长按模式：使用 keyHoldInterval 间隔
+                keyRepeatTimer = setInterval(() => {
+                    if (dir === -1) prev(CONFIG.autoScrollDuration);
+                    else if (dir === 1) next(CONFIG.autoScrollDuration);
+                }, CONFIG.keyHoldInterval);
+            }, CONFIG.keyHoldDelay);
+        }
+
+        function stopKeyRepeat() {
+            if (keyHoldTimer) {
+                clearTimeout(keyHoldTimer);
+                keyHoldTimer = null;
+            }
+            if (keyRepeatTimer) {
+                clearInterval(keyRepeatTimer);
+                keyRepeatTimer = null;
+            }
+            keyDir = 0;
+        }
+
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'ArrowLeft' || e.key === 'ArrowRight') {
+                e.preventDefault();
+                if (isDragging) return;
+                const dir = e.key === 'ArrowLeft' ? -1 : 1;
+                // 如果正在长按模式且方向相同，不重复触发
+                if (keyRepeatTimer && keyDir === dir) return;
+                if (keyHoldTimer && keyDir === dir) return;
+                // 停止之前的键盘行为
+                stopKeyRepeat();
+                // 启动新的
+                startKeyRepeat(dir);
+            }
+        });
+
+        document.addEventListener('keyup', (e) => {
+            if (e.key === 'ArrowLeft' || e.key === 'ArrowRight') {
+                e.preventDefault();
+                stopKeyRepeat();
+            }
+        });
+
+        // ================================================================
+        //  点击背景切换
+        // ================================================================
+
+        stage.addEventListener('click', (e) => {
+            if (e.target.closest('.card-item')) return;
+            if (isAnimating || isDragging) return;
+            const rect = stage.getBoundingClientRect();
+            const x = e.clientX - rect.left;
+            if (x < rect.width / 2) prev(CONFIG.keySingleDuration);
+            else next(CONFIG.keySingleDuration);
+        });
+
+        // ================================================================
+        //  统一停止自动翻页（拖拽时调用）
+        // ================================================================
+
+        function stopAutoScroll() {
+            stopHoverScroll();
+            stopKeyRepeat();
+        }
+
+        // ================================================================
+        //  🚀  初始化
+        // ================================================================
+
+        function init() {
+            buildCards();
+            buildIndicators();
+            floatOffset = 0;
+            currentIndex = 0;
+            renderCards(0, false);
+
+            stage.addEventListener('mousedown', onDragStart);
+            stage.addEventListener('touchstart', onDragStart, { passive: false });
+
+            let resizeTimer = null;
+            window.addEventListener('resize', () => {
+                if (resizeTimer) clearTimeout(resizeTimer);
+                resizeTimer = setTimeout(() => {
+                    cardWidth = getCardWidth();
+                    CONFIG.offsetStep = cardWidth;
+                    renderCards(floatOffset, false);
+                }, 150);
+            });
+        }
+
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', init);
+        } else {
+            init();
+        }
+
+        window.__carousel = { goTo, prev, next, currentIndex: () => currentIndex, data: CARD_DATA, config: CONFIG };
+    </script>
+</div>
+
 {% for category in sort_categories %}
   {% assign category_name = category | first %}
   {% assign posts_of_category = category | last %}
