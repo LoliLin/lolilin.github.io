@@ -217,9 +217,9 @@ layout: page
     </div>
 
     <script>
-        // ================================================================
-        //  🎯  可修改参数
-        // ================================================================
+        /* ================================================================
+          🎯  可修改参数
+         ================================================================ */
 
         const CARD_DATA = [
 {% for category in sort_categories %}
@@ -239,12 +239,12 @@ layout: page
 
 
         const CONFIG = {
-            // ---------- 卡片布局 ----------
+            /*  ---------- 卡片布局 ---------- */
             cardWidth: 300,
             cardHeight: 330,
-            offsetStep: 300, // 密铺（等于卡片宽度）
+            offsetStep: 300, 
 
-            // ---------- 透明度/层级 ----------
+            /* ---------- 透明度/层级 ----------*/
             opacityCenter: 1,
             opacitySide: 0.7,
             opacityFar: 0.4,
@@ -252,38 +252,35 @@ layout: page
             zSide: 10,
             zFar: 3,
 
-            // ---------- 拖拽滑动翻页阈值 ----------
-            dragThreshold: 60, // 手指滑动多少像素触发翻页
+            /* ---------- 拖拽滑动翻页阈值 -----------*/
+            dragThreshold: 60, 
 
-            // ---------- 悬停动态间隔 ----------
-            // 鼠标在边缘时最短间隔 (ms)，在中间区域（0.5位置）最长间隔
+            /* ---------- 悬停动态间隔 ----------
+             鼠标在边缘时最短间隔 (ms)，在中间区域（0.5位置）最长间隔-*/
             hoverMinInterval: 60,
             hoverMaxInterval: 600,
 
-            // ---------- 按键参数 ----------
-            keySingleDuration: 200, // 单次按键翻页动画时长
-            keyHoldInterval: 150, // 长按翻页间隔
-            keyHoldDelay: 300, // 长按延迟
-            autoScrollDuration: 80, // 自动翻页动画时长
+            /*  ---------- 按键参数 -----------*/
+            keySingleDuration: 200, 
+            keyHoldInterval: 150,
+            keyHoldDelay: 300, 
+            autoScrollDuration: 80, 
 
-            // ---------- 悬停触发区域 ----------
+            /*  ---------- 悬停触发区域 -----------*/
             hoverLeftThreshold: 0.35,
             hoverRightThreshold: 0.65,
         };
 
-        // ================================================================
-        //  🧠  核心逻辑
-        // ================================================================
 
         const totalCards = CARD_DATA.length;
         let currentIndex = 0;
         let floatOffset = 0;
         let isAnimating = false;
 
-        // ---------- 拖拽状态 ----------
+
         let isDragging = false;
         let dragStartX = 0;
-        let dragAccumulated = 0; // 累积滑动距离
+        let dragAccumulated = 0; 
 
         const isTouchDevice = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
 
@@ -293,7 +290,6 @@ layout: page
 
         let cardWidth = CONFIG.cardWidth;
 
-        // ---------- 工具 ----------
         function getCardWidth() {
             const sample = stage.querySelector('.card-item');
             if (sample) return sample.offsetWidth || CONFIG.cardWidth;
@@ -302,7 +298,6 @@ layout: page
 
         function mod(n, m) { return ((n % m) + m) % m; }
 
-        // ---------- 构建卡片 ----------
         function buildCards() {
             stage.innerHTML = '';
             const frag = document.createDocumentFragment();
@@ -337,7 +332,6 @@ layout: page
                 if (data.sub) card.appendChild(sub);
                 card.appendChild(bar);
 
-                // 移动端点击
                 let touchStartX = 0,
                     touchStartY = 0;
                 card.addEventListener('touchstart', (e) => {
@@ -359,7 +353,6 @@ layout: page
                     }
                 }, { passive: false });
 
-                // 桌面端 click
                 card.addEventListener('click', (e) => {
                     e.stopPropagation();
                     if (isAnimating || isDragging) return;
@@ -376,7 +369,6 @@ layout: page
             CONFIG.offsetStep = cardWidth;
         }
 
-        // ---------- 指示器 ----------
         function buildIndicators() {
             indicatorsEl.innerHTML = '';
             for (let i = 0; i < totalCards; i++) {
@@ -398,7 +390,6 @@ layout: page
             });
         }
 
-        // ---------- 卡片状态 ----------
         function getCardState(index, offset) {
             const diff = index - offset;
             const translateX = diff * CONFIG.offsetStep;
@@ -422,7 +413,6 @@ layout: page
             return { translateX, opacity, zIndex };
         }
 
-        // ---------- 渲染 ----------
         function renderCards(offset, animate = true, duration = CONFIG.autoScrollDuration) {
             const cards = stage.querySelectorAll('.card-item');
             const totalWidth = totalCards * CONFIG.offsetStep;
@@ -481,7 +471,6 @@ layout: page
             }
         }
 
-        // ---------- 翻页核心 ----------
         function goTo(targetIndex, duration = CONFIG.autoScrollDuration) {
             if (isAnimating) return;
             targetIndex = mod(targetIndex, totalCards);
@@ -503,9 +492,6 @@ layout: page
             if (!isAnimating) goTo(mod(currentIndex + 1, totalCards), duration);
         }
 
-        // ================================================================
-        //  🖱️  拖拽滑动翻页（卡片不跟随，仅触发翻页）
-        // ================================================================
 
         function onDragStart(e) {
             if (isAnimating) return;
@@ -516,9 +502,8 @@ layout: page
             dragStartX = point.clientX;
             dragAccumulated = 0;
 
-            stopAutoScroll(); // 停止悬停和键盘
+            stopAutoScroll(); 
 
-            // 不加过渡，但不移动卡片，所以无所谓
             document.addEventListener('mousemove', onDragMove);
             document.addEventListener('mouseup', onDragEnd);
             document.addEventListener('touchmove', onDragMove, { passive: false });
@@ -531,18 +516,14 @@ layout: page
             if (!isDragging) return;
             const point = e.touches ? e.touches[0] : e;
             const deltaX = point.clientX - dragStartX;
-            // 累积滑动距离
             dragAccumulated += deltaX;
-            dragStartX = point.clientX; // 重置起始点，实现连续累积
+            dragStartX = point.clientX; 
 
             const threshold = CONFIG.dragThreshold;
-            // 判断是否超过阈值
             if (dragAccumulated > threshold) {
-                // 向右滑 -> prev
                 prev(CONFIG.autoScrollDuration);
-                dragAccumulated = 0; // 重置累积
+                dragAccumulated = 0; 
             } else if (dragAccumulated < -threshold) {
-                // 向左滑 -> next
                 next(CONFIG.autoScrollDuration);
                 dragAccumulated = 0;
             }
@@ -557,31 +538,23 @@ layout: page
             document.removeEventListener('touchend', onDragEnd);
             isDragging = false;
             dragAccumulated = 0;
-            // 不执行任何回弹，直接结束
         }
 
-        // ================================================================
-        //  🖱️  悬停自动翻页（动态间隔，与偏心距有关）
-        // ================================================================
 
         let hoverTimer = null;
         let hoverDir = 0;
 
         function getHoverInterval(ratio) {
-            // ratio 0~1，距离边缘越近（ratio 接近 0 或 1），间隔越小
-            // 计算到最近边缘的距离
+
             const distToEdge = Math.min(ratio, 1 - ratio);
-            // 映射到 [0, 0.5] 范围，0 表示边缘，0.5 表示中间
-            // 间隔 = max - (max-min) * (1 - 2*distToEdge)？ 但简单线性映射
-            // 归一化：从边缘到中间，映射 0->1
-            const normalized = 1 - (distToEdge * 2); // 0边缘，1中间
-            // 间隔范围 min ~ max
+
+            const normalized = 1 - (distToEdge * 2); 
+
             const interval = CONFIG.hoverMaxInterval - (CONFIG.hoverMaxInterval - CONFIG.hoverMinInterval) * (1 - normalized);
             return Math.min(CONFIG.hoverMaxInterval, Math.max(CONFIG.hoverMinInterval, interval));
         }
 
         function startHoverScroll(dir, e) {
-            // 获取鼠标位置比例
             const rect = wrap.getBoundingClientRect();
             const x = e.clientX - rect.left;
             const ratio = x / rect.width;
@@ -591,7 +564,6 @@ layout: page
                 clearInterval(hoverTimer);
                 hoverTimer = null;
             }
-            // 立即执行一次
             if (dir === -1) prev(CONFIG.autoScrollDuration);
             else if (dir === 1) next(CONFIG.autoScrollDuration);
 
@@ -619,16 +591,11 @@ layout: page
                 else if (ratio > CONFIG.hoverRightThreshold) dir = 1;
 
                 if (dir !== 0) {
-                    // 如果方向改变或定时器不存在，重新启动
                     if (!hoverTimer || hoverDir !== dir) {
                         stopHoverScroll();
                         hoverDir = dir;
                         startHoverScroll(dir, e);
                     } else {
-                        // 方向相同，但可能间隔需要更新（因为鼠标移动改变了位置）
-                        // 为了动态更新间隔，我们重启定时器
-                        // 但频繁重启可能导致抖动，为了流畅，可以仅当距离变化较大时重启
-                        // 简单做法：每次都重启，但间隔变化平滑
                         stopHoverScroll();
                         startHoverScroll(dir, e);
                     }
@@ -643,16 +610,11 @@ layout: page
             });
         }
 
-        // ================================================================
-        //  ⌨️  键盘控制（单次 + 长按）
-        // ================================================================
-
         let keyHoldTimer = null;
         let keyRepeatTimer = null;
         let keyDir = 0;
 
         function startKeyRepeat(dir) {
-            // 停止之前的键盘定时器
             if (keyRepeatTimer) {
                 clearInterval(keyRepeatTimer);
                 keyRepeatTimer = null;
@@ -663,13 +625,10 @@ layout: page
             }
             keyDir = dir;
 
-            // 立即执行一次（单次按键效果）
             if (dir === -1) prev(CONFIG.keySingleDuration);
             else if (dir === 1) next(CONFIG.keySingleDuration);
 
-            // 设置延迟，进入长按模式
             keyHoldTimer = setTimeout(() => {
-                // 长按模式：使用 keyHoldInterval 间隔
                 keyRepeatTimer = setInterval(() => {
                     if (dir === -1) prev(CONFIG.autoScrollDuration);
                     else if (dir === 1) next(CONFIG.autoScrollDuration);
@@ -694,12 +653,12 @@ layout: page
                 e.preventDefault();
                 if (isDragging) return;
                 const dir = e.key === 'ArrowLeft' ? -1 : 1;
-                // 如果正在长按模式且方向相同，不重复触发
+
                 if (keyRepeatTimer && keyDir === dir) return;
                 if (keyHoldTimer && keyDir === dir) return;
-                // 停止之前的键盘行为
+
                 stopKeyRepeat();
-                // 启动新的
+
                 startKeyRepeat(dir);
             }
         });
@@ -711,9 +670,6 @@ layout: page
             }
         });
 
-        // ================================================================
-        //  点击背景切换
-        // ================================================================
 
         stage.addEventListener('click', (e) => {
             if (e.target.closest('.card-item')) return;
@@ -724,18 +680,12 @@ layout: page
             else next(CONFIG.keySingleDuration);
         });
 
-        // ================================================================
-        //  统一停止自动翻页（拖拽时调用）
-        // ================================================================
 
         function stopAutoScroll() {
             stopHoverScroll();
             stopKeyRepeat();
         }
 
-        // ================================================================
-        //  🚀  初始化
-        // ================================================================
 
         function init() {
             buildCards();
