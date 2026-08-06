@@ -85,7 +85,7 @@
   let isDragging = false;
   let startX, startY, origX, origY;
 
-  // 恢复之前保存的拖拽位置
+  /* 恢复之前保存的拖拽位置 */
   const savedX = localStorage.getItem('netease-flow-x');
   const savedY = localStorage.getItem('netease-flow-y');
   if (savedX && savedY) {
@@ -96,7 +96,7 @@
   }
 
   el.addEventListener('mousedown', (e) => {
-    // 排除点在播放按钮等 iframe 内部（一般点不到边缘 padding 才会触发拖拽）
+    /* 排除点在播放按钮等 iframe 内部（一般点不到边缘 padding 才会触发拖拽） */
     if (e.target !== el && e.target.tagName === 'IFRAME') return; 
     
     isDragging = true;
@@ -108,7 +108,7 @@
     origX  = rect.left;
     origY  = rect.top;
     
-    el.style.transition = 'none'; // 拖拽时关掉动画，防止延迟
+    el.style.transition = 'none'; /* 拖拽时关掉动画，防止延迟 */
   });
 
   document.addEventListener('mousemove', (e) => {
@@ -128,7 +128,7 @@
     el.classList.remove('is-dragging');
     el.style.transition = 'transform 0.2s ease, box-shadow 0.2s ease';
 
-    // 记录松开鼠标时的新位置
+    /* 记录松开鼠标时的新位置 */
     const rect = el.getBoundingClientRect();
     localStorage.setItem('netease-flow-x', rect.left);
     localStorage.setItem('netease-flow-y', rect.top);

@@ -150,10 +150,10 @@
       var container = document.getElementById('aplayer-flow') || document.getElementById('aplayer-container');
       if (!container || !audioList.length) return;
 
-      // ======== 1. 恢复上次播放状态 ========
+      /* ======== 1. 恢复上次播放状态 ======== */
       var saved = JSON.parse(localStorage.getItem('aplayer-state') || '{}');
 
-      // ======== 2. 创建 APlayer ========
+      /* ======== 2. 创建 APlayer ======== */
       var ap = new APlayer({
         container: container,
         audio: audioList,
@@ -168,10 +168,10 @@
         preload: 'auto',
       });
 
-      // ======== 3. 恢复歌曲位置 ========
-      // ======== 3. 恢复歌曲位置（严格匹配） ========
+      /* ======== 3. 恢复歌曲位置 ======== */
+      /* ======== 3. 恢复歌曲位置（严格匹配） ======== */
       if (saved.index !== undefined && saved.audioUrl) {
-        // 检查 saved 的歌曲是否在当前播放列表里
+        /* 检查 saved 的歌曲是否在当前播放列表里 */
         var matchIndex = -1;
         for (var i = 0; i < audioList.length; i++) {
           if (audioList[i].url === saved.audioUrl) {
@@ -179,7 +179,7 @@
             break;
           }
         }
-        // 只有当前列表里有同一首歌才恢复
+        /* 只有当前列表里有同一首歌才恢复 */
         if (matchIndex !== -1) {
           ap.list.switch(matchIndex);
           if (saved.currentTime) {
@@ -192,20 +192,20 @@
             };
             ap.on('loadeddata', trySeek);
           }
-          // 如果之前是播放状态，手动触发播放（浏览器可能阻止 autoplay）
+          /* 如果之前是播放状态，手动触发播放（浏览器可能阻止 autoplay） */
         }
-        // matchIndex === -1: 当前页面没有这首歌，啥也不做，保持默认状态
+        /* matchIndex === -1: 当前页面没有这首歌，啥也不做，保持默认状态 */
       }
 
 
-      // ======== 4. 离开页面时保存状态 ========
+      /* ======== 4. 离开页面时保存状态 ======== */
       function saveState() {
         if (!ap || !ap.audio) return;
         var currentIndex = ap.list.index;
         var currentAudio = audioList[currentIndex];
         var state = {
           index: currentIndex,
-          audioUrl: currentAudio ? currentAudio.url : null,  // ← 加上这个
+          audioUrl: currentAudio ? currentAudio.url : null,  /* ← 加上这个 */
           currentTime: ap.audio.currentTime || 0,
           playing: !ap.audio.paused,
           volume: ap.audio.volume,
@@ -215,16 +215,16 @@
       }
 
 
-      // 定时保存（每 5 秒）
+      /* 定时保存（每 5 秒） */
       setInterval(saveState, 5000);
-      // 离开页面立即保存
+      /* 离开页面立即保存 */
       window.addEventListener('beforeunload', saveState);
-      // 页面隐藏时也保存（移动端切后台）
+      /* 页面隐藏时也保存（移动端切后台） */
       document.addEventListener('visibilitychange', function() {
         if (document.hidden) saveState();
       });
 
-      // ======== 5. 暗色模式自动检测 + 监听切换 ========
+      /* ======== 5. 暗色模式自动检测 + 监听切换 ======== */
       function getTheme() {
         var mode = document.documentElement.getAttribute('data-mode');
         if (mode === 'dark') return 'dark';
@@ -232,12 +232,12 @@
         return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
       }
 
-      // 第一次启动时如果音频在播放但浏览器策略阻止了，静默处理
+      /* 第一次启动时如果音频在播放但浏览器策略阻止了，静默处理 */
       if (saved.playing) {
-        // 有些浏览器会阻止自动播放，没关系，用户手动点一下就好
+        /* 有些浏览器会阻止自动播放，没关系，用户手动点一下就好 */
       }
 
-      // ======== 6. 拖拽逻辑 ========
+      /* ======== 6. 拖拽逻辑 ======== */
       (function() {
         var el = document.getElementById('aplayer-flow');
         if (!el) return;

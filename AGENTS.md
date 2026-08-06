@@ -92,12 +92,13 @@ Front matter: `layout: page`, `icon` (FontAwesome), `order` (1–5: novels, cate
 ### Liquid patterns
 - Includes are called with params: `{% include datetime.html date=page.date lang=page.lang %}`; layout front-matter hooks (`panel_includes`/`tail_includes`/`script_includes`) select includes per layout — follow this when adding page furniture.
 - Media URLs must flow through `_includes/media-url.html` (handles `media_subpath`, `cdn`, baseurl).
+- **Inline `<script>` blocks: use `/* */` comments ONLY, never `//`** — the build (jekyll-compress-html) collapses inline scripts to a single line, and a `//` comment then swallows the rest of the script (this broke `aplayer.html`/`netease-cloud-music.html` once). Liquid `{{ }}` inside scripts is fine.
 - Formatting: `.editorconfig` = UTF-8, 2-space indent, LF, single quotes in JS/CSS/SCSS, double quotes in YAML. Prettier is the default VS Code formatter with `*.html` treated as Liquid; `theme-check`/`shfmt`/`stylelint` per-language. Repo styles use `text-autospace` inline where CJK spacing matters.
 
 ## Important Files
 
 - `_config.yml` — all site config: theme, `lang: zh-CN`, `timezone: Asia/Shanghai`, collections, defaults, giscus, `paginate: 10`, PWA, `exclude`.
-- `Gemfile` — `jekyll-theme-chirpy ~> 7.2 (>= 7.2.2)`, `html-proofer ~> 5.0` (test), Windows gems (`tzinfo`, `wdm`).
+- `Gemfile` — `jekyll-theme-chirpy ~> 7.2.2` (**pinned**: 7.3+ changed the theme-mode toggle to a dropdown that breaks the repo's 7.2-era sidebar — do not loosen this), `html-proofer ~> 5.0` (test), Windows gems (`tzinfo`, `wdm`).
 - `_layouts/default.html` — page shell; the hub of the layout system.
 - `_layouts/post.html`, `novels.html`, `novel.html`, `categories.html`, `tags.html`, `about.html` — the bespoke layouts (read these before touching page templates).
 - `_includes/refactor-content.html` — content post-processing pipeline (images, code, headings).
