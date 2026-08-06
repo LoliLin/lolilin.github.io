@@ -1,0 +1,59 @@
+---
+layout: page
+# All the novels.
+---
+
+{% include lang.html %}
+
+{% assign novel_list = site.novels | group_by: "novel" | sort: "name" %}
+
+{% if novel_list.size == 0 %}
+  <div class="text-center my-5 text-muted">
+    <i class="fa-regular fa-book fa-3x mb-3"></i>
+    <p>还没有小说，敬请期待。</p>
+  </div>
+{% else %}
+  <div class="row row-cols-1 row-cols-md-2 g-4 mt-2">
+    {% for group in novel_list %}
+      {% assign novel_name = group.name %}
+      {% assign chapters = group.items | where_exp: "c", "c.chapter" %}
+      {% assign chapter_count = chapters | size %}
+      {% assign volume_count = chapters | map: "volume" | uniq | size %}
+      {% assign first_volume = chapters | map: "volume" | uniq | sort | first %}
+      {% assign first_chapter = chapters | where: "volume", first_volume | sort: "chapter" | first %}
+      {% assign readme = group.items | where: "chapter", nil | first %}
+      {% assign description = readme.description | default: "" %}
+      {% assign detail_url = readme.url | default: first_chapter.url %}
+
+      <div class="col">
+        <div class="card h-100">
+          <div class="card-body">
+            <h5 class="card-title">
+              <i class="fa-regular fa-bookmark me-2"></i>
+              {{ novel_name }}
+            </h5>
+            {% if description %}
+              <p class="card-text text-muted small">{{ description }}</p>
+            {% endif %}
+            <p class="card-text">
+              <span class="badge bg-secondary">{{ volume_count }} 卷</span>
+              <span class="badge bg-secondary ms-1">{{ chapter_count }} 章</span>
+            </p>
+            {% if first_chapter %}
+              <div class="d-flex gap-2">
+                <a href="{{ first_chapter.url | relative_url }}" class="btn btn-primary btn-sm">
+                  开始阅读 <i class="fa-solid fa-arrow-right"></i>
+                </a>
+                {% if detail_url %}
+                  <a href="{{ detail_url | relative_url }}" class="btn btn-outline-secondary btn-sm">
+                    详情
+                  </a>
+                {% endif %}
+              </div>
+            {% endif %}
+          </div>
+        </div>
+      </div>
+    {% endfor %}
+  </div>
+{% endif %}

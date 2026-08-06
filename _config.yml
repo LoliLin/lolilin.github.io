@@ -169,9 +169,20 @@ kramdown:
       start_line: 1
 
 collections:
+
   tabs:
+
     output: true
+
     sort_by: order
+
+
+
+  novels:
+
+    output: true
+
+    permalink: /novels/:path/
 
 defaults:
   - scope:
@@ -188,12 +199,19 @@ defaults:
       path: _drafts
     values:
       comments: false
-  - scope:
-      path: ""
-      type: tabs # see `site.collections`
-    values:
-      layout: page
-      permalink: /:title/
+  - scope:
+      path: ""
+      type: tabs # see `site.collections`
+    values:
+      layout: page
+      permalink: /:title/
+  - scope:
+      path: ""
+      type: novels
+    values:
+      layout: novel
+      comments: true
+      toc: true
 
 sass:
   style: compressed
