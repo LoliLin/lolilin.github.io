@@ -9,7 +9,7 @@ layout: page
 
 {% if novel_list.size == 0 %}
   <div class="text-center my-5 text-muted">
-    <i class="fa-regular fa-book fa-3x mb-3"></i>
+    <i class="fa-solid fa-book fa-3x mb-3"></i>
     <p>还没有小说，敬请期待。</p>
   </div>
 {% else %}
@@ -29,7 +29,7 @@ layout: page
         <div class="card h-100">
           <div class="card-body">
             <h5 class="card-title">
-              <i class="fa-regular fa-bookmark me-2"></i>
+              <i class="fa-solid fa-bookmark me-2"></i>
               {{ novel_name }}
             </h5>
             {% if description %}
@@ -57,3 +57,19 @@ layout: page
     {% endfor %}
   </div>
 {% endif %}
+
+<style>
+[data-mode="dark"] .card,
+[data-bs-theme="dark"] .card {
+  background-color: #212529;
+  border-color: #2c3034;
+}
+[data-mode="dark"] .card .card-title,
+[data-bs-theme="dark"] .card .card-title {
+  color: #f8f9fa;
+}
+[data-mode="dark"] .card .card-text,
+[data-bs-theme="dark"] .card .card-text {
+  color: #adb5bd !important;
+}
+</style>

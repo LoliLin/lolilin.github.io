@@ -1,3 +1,11 @@
+---
+layout: novel
+novel: 万法皆契
+title: 万法皆契
+description:
+permalink: /novels/万法皆契/
+---
+
 # 01 需求文档：长篇原创智斗网文创作需求
 
 > 状态：阶段 1 交付物 · 日期：2026-08-06

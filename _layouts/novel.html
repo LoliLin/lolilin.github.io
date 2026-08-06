@@ -9,7 +9,7 @@ layout: default
     <header class="post-header">
       <div class="mb-2">
         <a href="{{ '/novels/' | relative_url }}" class="text-muted me-2">
-          <i class="fa-regular fa-bookmark"></i> 小说
+          <i class="fa-solid fa-bookmark"></i> 小说
         </a>
         <span class="text-muted">/</span>
         {% if page.novel %}
@@ -75,7 +75,7 @@ layout: default
         <span></span>
       {% endif %}
       <a href="{{ page.novel | uri_escape | prepend: '/novels/' | relative_url }}/" class="btn btn-outline-secondary">
-        <i class="fa-regular fa-list"></i> 目录
+        <i class="fa-solid fa-list"></i> 目录
       </a>
       {% if next_chapter %}
         <a href="{{ next_chapter.url | relative_url }}" class="btn btn-primary">
@@ -93,7 +93,7 @@ layout: default
     {% assign first_chapter = chapters | where: "volume", first_volume | sort: "chapter" | first %}
 
     <div class="text-center my-5">
-      <i class="fa-regular fa-book-open fa-4x mb-3 text-muted"></i>
+      <i class="fa-solid fa-book-open fa-4x mb-3 text-muted"></i>
       <h2>{{ novel }}</h2>
       {% if content.size > 10 %}
         <div class="mt-3 text-start mx-auto" style="max-width: 600px;">
@@ -146,6 +146,18 @@ layout: default
 }
 .chapter-nav a {
   min-width: 120px;
+}
+[data-mode="dark"] .chapter-item,
+[data-bs-theme="dark"] .chapter-item {
+  color: #dee2e6;
+}
+[data-mode="dark"] .chapter-item:hover,
+[data-bs-theme="dark"] .chapter-item:hover {
+  background: rgba(255, 255, 255, 0.08);
+}
+[data-mode="dark"] .chapter-nav,
+[data-bs-theme="dark"] .chapter-nav {
+  border-color: #2c3034;
 }
 @media (max-width: 576px) {
   .chapter-nav {
